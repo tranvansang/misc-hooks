@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"baseUrl": ".",
+		"outDir": ".",
+		"declaration": true,
+		"inlineSourceMap": true,
+		"downlevelIteration": true,
+		"strictNullChecks": true,
+		"moduleResolution": "Node"
+	},
+	"include": ["index.ts"],
+	"exclude": ["node_modules"]
+}

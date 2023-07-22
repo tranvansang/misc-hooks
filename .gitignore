@@ -1,0 +1,13 @@
+.idea
+node_modules/
+index.js
+index.es.js
+index.d.ts
+
+.yarn/*
+.pnp.*
+!.yarn/releases
+!.yarn/patches
+!.yarn/sdks
+!.yarn/plugins
+!.yarn/versions

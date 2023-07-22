@@ -2,8 +2,32 @@
   "name": "misc-hooks",
   "version": "0.0.1",
   "main": "index.js",
+  "module": "index.es.js",
+  "exports": {
+    ".": {
+      "import": "./index.es.js",
+      "require": "./index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp index.js index.es.js && tsc -p tsconfig-cjs.json",
+    "prepublish": "rm -rf index.es.js index.js && yarn build"
+  },
+  "files": [
+    "index.js",
+    "index.es.js"
+  ],
   "repository": "git@github.com:tranvansang/misc-hooks.git",
   "author": "Sang Tran <t@sang.jp>",
   "license": "MIT",
-  "private": false
+  "packageManager": "yarn@3.6.1",
+  "dependencies": {
+    "add-evt-listener": "^0.0.3",
+    "deep-equal": "^2.2.2",
+    "jmisc": "^0.0.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "typescript": "^5.1.6"
+  }
 }
