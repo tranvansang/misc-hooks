@@ -1,0 +1,9 @@
+{
+  "name": "misc-hooks",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "git@github.com:tranvansang/misc-hooks.git",
+  "author": "Sang Tran <t@sang.jp>",
+  "license": "MIT",
+  "private": false
+}
