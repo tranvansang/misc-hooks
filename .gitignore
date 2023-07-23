@@ -1,8 +1,9 @@
 .idea
 node_modules/
 index.js
-index.es.js
+index.mjs
 index.d.ts
+index.d.mts
 
 .yarn/*
 .pnp.*

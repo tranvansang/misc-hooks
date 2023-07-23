@@ -1,21 +1,23 @@
 {
   "name": "misc-hooks",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
-  "module": "index.es.js",
+  "module": "index.mjs",
   "exports": {
     ".": {
-      "import": "./index.es.js",
+      "import": "./index.mjs",
       "require": "./index.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp index.js index.es.js && tsc -p tsconfig-cjs.json",
-    "prepublish": "rm -rf index.es.js index.js && yarn build"
+    "build": "tsc -p tsconfig.json && mv index.js index.mjs && mv index.d.ts index.d.mts && tsc -p tsconfig-cjs.json",
+    "prepublish": "rm -rf index.mjs index.js index.d.ts index.d.mts && yarn build"
   },
   "files": [
     "index.js",
-    "index.es.js"
+    "index.mjs",
+    "index.d.ts",
+    "index.d.mts"
   ],
   "repository": "git@github.com:tranvansang/misc-hooks.git",
   "author": "Sang Tran <t@sang.jp>",
