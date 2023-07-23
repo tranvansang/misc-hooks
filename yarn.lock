@@ -383,10 +383,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jmisc@npm:^0.0.4":
-  version: 0.0.4
-  resolution: "jmisc@npm:0.0.4"
-  checksum: 9a4764d45ac0b63b2a7a8d7cdf43b66886bb1f958a8e5e32fbf8e9ef3025d7a2abb3e2a3733260680674c8b2d9e5cc16386532b3c8447be4ef6393020466ebbd
+"jmisc@npm:^0.0.5":
+  version: 0.0.5
+  resolution: "jmisc@npm:0.0.5"
+  checksum: e92bcfebaf7b1bdf4a9b86223d32ab7ea866a8436ef6577b382b00df3109ddab975781d60e55c54e5482b4aa16178546da69eabec420ea85c4fa4841e2b3d967
   languageName: node
   linkType: hard
 
@@ -398,7 +398,7 @@ __metadata:
     "@types/react": ^18.2.15
     add-evt-listener: ^0.0.5
     deep-equal: ^2.2.2
-    jmisc: ^0.0.4
+    jmisc: ^0.0.5
     type-fest: ^4.0.0
     typescript: ^5.1.6
   languageName: unknown
