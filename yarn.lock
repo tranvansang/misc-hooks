@@ -5,6 +5,13 @@ __metadata:
   version: 6
   cacheKey: 8
 
+"@types/node@npm:^20.4.4":
+  version: 20.4.4
+  resolution: "@types/node@npm:20.4.4"
+  checksum: 43f3c4a8acc38ae753e15a0e79bae0447d255b3742fa87f8e065d7b9d20ecb0e03d6c5b46c00d5d26f4552160381a00255f49205595a8ee48c2423e00263c930
+  languageName: node
+  linkType: hard
+
 "@types/prop-types@npm:*":
   version: 15.7.5
   resolution: "@types/prop-types@npm:15.7.5"
@@ -30,10 +37,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"add-evt-listener@npm:^0.0.3":
-  version: 0.0.3
-  resolution: "add-evt-listener@npm:0.0.3"
-  checksum: f514203b4340fa587f97c10bfb04c4519a028a18f08c4447de748cf647e6069ab0cebaa547bd76338535cf78b2a73f978a74366fd28ac756f9be2ca56fd6d501
+"add-evt-listener@npm:^0.0.5":
+  version: 0.0.5
+  resolution: "add-evt-listener@npm:0.0.5"
+  checksum: 3dd3f254a9cb4ca626c736e8f78c0573aa5408b43b11e9d8b0b3d65e9f85f8e8edafcceb2bf66cd13f74228537d213ab5d7f1d9676e81e9cabddb348505aa55e
   languageName: node
   linkType: hard
 
@@ -376,10 +383,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jmisc@npm:^0.0.2":
-  version: 0.0.2
-  resolution: "jmisc@npm:0.0.2"
-  checksum: b55a5606ead5b7d6d818f9ffc8041e47354dcc7351d0c42d28c761152d60e492241fd790417021cdedb818ab418bd6b449434a4dbdb00b6f6653780908811f55
+"jmisc@npm:^0.0.4":
+  version: 0.0.4
+  resolution: "jmisc@npm:0.0.4"
+  checksum: 9a4764d45ac0b63b2a7a8d7cdf43b66886bb1f958a8e5e32fbf8e9ef3025d7a2abb3e2a3733260680674c8b2d9e5cc16386532b3c8447be4ef6393020466ebbd
   languageName: node
   linkType: hard
 
@@ -387,10 +394,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "misc-hooks@workspace:."
   dependencies:
+    "@types/node": ^20.4.4
     "@types/react": ^18.2.15
-    add-evt-listener: ^0.0.3
+    add-evt-listener: ^0.0.5
     deep-equal: ^2.2.2
-    jmisc: ^0.0.2
+    jmisc: ^0.0.4
+    type-fest: ^4.0.0
     typescript: ^5.1.6
   languageName: unknown
   linkType: soft
@@ -459,6 +468,13 @@ __metadata:
   dependencies:
     internal-slot: ^1.0.4
   checksum: d04173690b2efa40e24ab70e5e51a3ff31d56d699550cfad084104ab3381390daccb36652b25755e420245f3b0737de66c1879eaa2a8d4fc0a78f9bf892fcb42
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "type-fest@npm:4.0.0"
+  checksum: 716f32ac341b1cf35bf08cc5cc6a11822436333966d3f4d94758112f45829efa3efb643ebc74a53e514e68a1bddab144d0153d654e072b41ba9bd98bcf841d75
   languageName: node
   linkType: hard
 

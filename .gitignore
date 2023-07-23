@@ -1,8 +1,8 @@
 .idea
 node_modules/
-index.js
+index.cjs
 index.mjs
-index.d.ts
+index.d.cts
 index.d.mts
 
 .yarn/*
