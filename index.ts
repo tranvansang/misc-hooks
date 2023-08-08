@@ -330,7 +330,12 @@ export const useConfirmDiscard = (msg?: string) => {
 		if (msg) return addEvtListener(
 			window,
 			'beforeunload',
-			e => e.returnValue = msg
+			e => {
+				e.preventDefault()
+				// @ts-ignore
+				e.returnValue = msg
+			},
+			{capture: true}
 		)
 	}, [msg])
 }

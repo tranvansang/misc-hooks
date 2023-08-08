@@ -37,10 +37,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"add-evt-listener@npm:^0.0.5":
-  version: 0.0.5
-  resolution: "add-evt-listener@npm:0.0.5"
-  checksum: 3dd3f254a9cb4ca626c736e8f78c0573aa5408b43b11e9d8b0b3d65e9f85f8e8edafcceb2bf66cd13f74228537d213ab5d7f1d9676e81e9cabddb348505aa55e
+"add-evt-listener@npm:^0.1.1":
+  version: 0.1.1
+  resolution: "add-evt-listener@npm:0.1.1"
+  checksum: 884e3cc38bd81be3a035396171b07a0435061126e3177d1f757132660d699389e116c01d2b5c484002bc1894e9822a381bbbe8146cd73bb08d683c3bdc97fad4
   languageName: node
   linkType: hard
 
@@ -383,10 +383,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jmisc@npm:^0.0.5":
-  version: 0.0.5
-  resolution: "jmisc@npm:0.0.5"
-  checksum: e92bcfebaf7b1bdf4a9b86223d32ab7ea866a8436ef6577b382b00df3109ddab975781d60e55c54e5482b4aa16178546da69eabec420ea85c4fa4841e2b3d967
+"jmisc@npm:^0.0.8":
+  version: 0.0.8
+  resolution: "jmisc@npm:0.0.8"
+  checksum: 5c61806e9656424e6e3d7d6dd89033f90f417977cf11e8d7e867c6cb4011d18eda19e484a341dc3ca5fa85d8d7032d0e8202fcc0bd3b07f8c2e009f3d83b5014
   languageName: node
   linkType: hard
 
@@ -396,9 +396,9 @@ __metadata:
   dependencies:
     "@types/node": ^20.4.4
     "@types/react": ^18.2.15
-    add-evt-listener: ^0.0.5
+    add-evt-listener: ^0.1.1
     deep-equal: ^2.2.2
-    jmisc: ^0.0.5
+    jmisc: ^0.0.8
     type-fest: ^4.0.0
     typescript: ^5.1.6
   languageName: unknown

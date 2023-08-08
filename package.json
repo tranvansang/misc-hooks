@@ -22,7 +22,7 @@
   "license": "MIT",
   "packageManager": "yarn@3.6.1",
   "dependencies": {
-    "add-evt-listener": "^0.1.0",
+    "add-evt-listener": "^0.1.1",
     "deep-equal": "^2.2.2",
     "jmisc": "^0.0.8"
   },

@@ -1,4 +1,4 @@
-rm -rf index.mjs index.cjs index.d.cts index.d.mts \
+rm -rf index.{,m,c}mjs index.d.{c,m}ts \
 && yarn tsc -p tsconfig.json \
 && mv index.js index.mjs \
 && mv index.d.ts index.d.mts \
