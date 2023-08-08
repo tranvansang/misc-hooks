@@ -1,7 +1,7 @@
 import type {Dispatch, MutableRefObject, RefObject, SetStateAction} from 'react'
 import {useCallback, useEffect, useId, useLayoutEffect, useReducer, useRef, useState} from 'react'
 import deepEqual from 'deep-equal'
-import {addEvtListener} from 'add-evt-listener'
+import addEvtListener from 'add-evt-listener'
 import {isBrowser} from 'jmisc'
 
 type OptionalArraySub<T extends readonly unknown[],

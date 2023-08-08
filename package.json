@@ -1,6 +1,6 @@
 {
   "name": "misc-hooks",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "main": "index.cjs",
   "exports": {
     ".": {
@@ -22,9 +22,9 @@
   "license": "MIT",
   "packageManager": "yarn@3.6.1",
   "dependencies": {
-    "add-evt-listener": "^0.0.5",
+    "add-evt-listener": "^0.1.0",
     "deep-equal": "^2.2.2",
-    "jmisc": "^0.0.5"
+    "jmisc": "^0.0.8"
   },
   "devDependencies": {
     "@types/node": "^20.4.4",
