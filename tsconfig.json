@@ -8,7 +8,8 @@
 		"inlineSourceMap": true,
 		"downlevelIteration": true,
 		"strictNullChecks": true,
-		"moduleResolution": "Node"
+		"moduleResolution": "Node",
+		"esModuleInterop": true
 	},
 	"include": ["index.ts"],
 	"exclude": ["node_modules"]
