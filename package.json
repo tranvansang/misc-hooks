@@ -1,9 +1,10 @@
 {
   "name": "misc-hooks",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "main": "index.cjs",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./index.mjs",
       "require": "./index.cjs"
     }
@@ -14,17 +15,16 @@
   "files": [
     "index.cjs",
     "index.mjs",
-    "index.d.cts",
-    "index.d.mts"
+    "index.d.ts"
   ],
-  "repository": "git@github.com:tranvansang/misc-hooks.git",
+  "repository": "https://github.com/tranvansang/misc-hooks",
   "author": "Sang Tran <t@sang.jp>",
   "license": "MIT",
   "packageManager": "yarn@3.6.1",
   "dependencies": {
     "add-evt-listener": "^0.1.1",
     "deep-equal": "^2.2.2",
-    "jmisc": "^0.0.8"
+    "jmisc": "^0.0.9"
   },
   "devDependencies": {
     "@types/node": "^20.4.4",
