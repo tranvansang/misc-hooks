@@ -17,6 +17,7 @@ export declare const usePrevRef: <T>(value: T) => MutableRefObject<T | undefined
 export declare const useDefaultState: <T>(defaultState: T) => readonly [T, Dispatch<SetStateAction<T>>];
 export declare const useEffectWithPrevDeps: <T extends readonly unknown[]>(effect: (prevDeps: OptionalArray<T>) => (void | (() => void | undefined)), deps: T) => void;
 export declare const useLayoutEffectWithPrevDeps: <T extends readonly unknown[]>(effect: (prevDeps: OptionalArray<T>) => (void | (() => void | undefined)), deps: T) => void;
+export declare const useEffectOnce: <T extends readonly unknown[]>(effect: () => (void | (() => void | undefined)), deps: T) => void;
 export declare function useEnhancedState<S>(initialState?: S | (() => S)): [S, Dispatch<SetStateAction<S>>, MutableRefObject<S>];
 export declare function useEnhancedState<S = undefined>(): [
     S | undefined,
