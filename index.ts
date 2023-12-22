@@ -180,6 +180,23 @@ export const useLayoutEffectWithPrevDeps = <T extends readonly unknown[]>(
 	)
 }
 
+export const useEffectOnce = <T extends readonly unknown[]>(
+	effect: () => (void | (() => void | undefined)),
+	deps: T
+) => {
+	const firedRef = useRef(false)
+	useEffect(
+		() => {
+			if (!firedRef.current) {
+				firedRef.current = true
+				return effect()
+			}
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		deps
+	)
+}
+
 export function useEnhancedState<S>(initialState?: S | (() => S)): [S, Dispatch<SetStateAction<S>>, MutableRefObject<S>]
 export function useEnhancedState<S = undefined>(): [
 		S | undefined,

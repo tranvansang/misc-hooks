@@ -16,6 +16,7 @@
 - `prefRef = usePrevRef(value)`: get a ref whose value is the previous `value`.
 - `[state, setState] = useDefaultState(defaultState)`: when `defaultState` changes, set `state` to `defaultState`. Note: we currently rely on deps array to trigger the effect. Need to check if react never fires the effect when the deps array is the same.
 - `useEffectWithPrevDeps((prevDeps) => {}, [...deps])`: similar to `useEffect`, but also provides previous deps to the effect function.
+- `useEffectOnce(() => {}, [...deps])`: similar to `useEffect`, but fires only once.
 - `useLayoutEffectWithPrevDeps((prevDeps) => {}, [...deps])`: `useLayoutEffect` version of `useEffectWithPrevDeps`.
 - `[state, setState, stateRef] = useEnhancedState(initialState)`: similar to `useState`, but also returns a ref whose value is always the latest `state`.
 - `[state, setState, stateRef] = useRefState(initialState)`: similar to `useState`. `stateRef`'s value is set immediately and synchronously after `setState` is called. Note: `initialState` can not be a function.
