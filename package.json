@@ -17,19 +17,21 @@
     "index.mjs",
     "index.d.ts"
   ],
-  "repository": "https://github.com/tranvansang/misc-hooks",
-  "homepage": "https://github.com/tranvansang/misc-hooks",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tranvansang/misc-hooks.git"
+  },
   "author": "Sang Tran <t@sang.jp>",
   "license": "MIT",
   "dependencies": {
     "add-evt-listener": "^0.1.1",
-    "deep-equal": "^2.2.2",
+    "deep-equal": "^2.2.3",
     "jmisc": "^0.0.10"
   },
   "devDependencies": {
-    "@types/node": "^20.4.4",
-    "@types/react": "^18.2.15",
-    "type-fest": "^4.0.0",
-    "typescript": "^5.1.6"
+    "@types/node": "^20.12.8",
+    "@types/react": "^18.3.1",
+    "type-fest": "^4.18.1",
+    "typescript": "^5.4.5"
   }
 }
