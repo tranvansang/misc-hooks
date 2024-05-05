@@ -30,8 +30,8 @@ export declare function useRefState<T = undefined>(): [
     Dispatch<SetStateAction<T | undefined>>,
     MutableRefObject<T | undefined>
 ];
-export declare const useAtomicMaker: () => [boolean, <T, V>(cb: (...params: T[]) => V) => (...params: T[]) => Promise<void | V>];
-export declare const useAtomicCallback: <T, V extends Promise<any>>(cb: (...params: T[]) => V) => [boolean, (...params: T[]) => Promise<void | V>];
+export declare const useAtomicMaker: () => [boolean, <T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | void>)];
+export declare const useAtomicCallback: <T, V extends Promise<any>>(cb: (...params: T[]) => V) => [boolean, (...params: T[]) => Promise<V | void>];
 export declare const useRefValue: <T>(value: T) => MutableRefObject<T>;
 export declare function useAnimationState<T>(elmRef: RefObject<Element>, initialValue: T): [T, Dispatch<SetStateAction<T>>];
 export declare function useAnimationState<T = undefined>(elmRef: RefObject<Element>): [
@@ -86,4 +86,5 @@ export declare function useListData<T>({ load, initial, }: {
     hasNext: boolean;
     hasPrev: boolean;
 };
+export declare function useHiddenState<T>(obj: any, key: any, defaultValue?: T | (() => T)): readonly [T, (newState: T) => void];
 export {};

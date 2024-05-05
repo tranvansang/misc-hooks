@@ -478,7 +478,7 @@ export function useListData<T>(
 }
 
 export function useHiddenState<T>(obj: any, key: any, defaultValue?: T | (() => T)) {
-	const [state, setState] = useState<T>(() => obj[key]?.state ?? (typeof defaultValue === 'function' ? defaultValue() : defaultValue))
+	const [state, setState] = useState<T>(() => obj[key]?.state ?? (typeof defaultValue === 'function' ? (defaultValue as () => T)() : defaultValue))
 	useEffect(() => {
 		// init state if not exist
 		const hiddenState: {
