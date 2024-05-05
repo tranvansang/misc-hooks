@@ -49,4 +49,5 @@ Note: if the animation fires before the effect is called which usually happens (
 	}
 })
 ```
+- `useHiddenState<T>(obj: any, key: any, defaultValue?: T | (() => T)): [state: T, setState: (value: T) => void]`: share state between components via `obj[key]`. Recommend to use symbol as key to prevent conflicts.
 When calling `loadNext, loadPrev`, if there is an existing running, the new call will not be executed and does nothing.

@@ -1,4 +1,5 @@
 import type {Dispatch, MutableRefObject, RefObject, SetStateAction} from 'react'
+import {IBroadcastStream, makeBroadcastStream} from 'jdefer'
 import {useCallback, useEffect, useId, useLayoutEffect, useReducer, useRef, useState} from 'react'
 import deepEqual from 'deep-equal'
 import addEvtListener from 'add-evt-listener'
@@ -474,4 +475,20 @@ export function useListData<T>(
 			}
 		},
 	}
+}
+
+export function useHiddenState<T>(obj: any, key: any, defaultValue?: T | (() => T)) {
+	const [state, setState] = useState<T>(() => obj[key]?.state ?? (typeof defaultValue === 'function' ? defaultValue() : defaultValue))
+	useEffect(() => {
+		// init state if not exist
+		const hiddenState: {
+			stream: IBroadcastStream<T>
+			state?: T
+		} = obj[key] ?? {}
+		return (hiddenState.stream ??= makeBroadcastStream()).listen(setState)
+	}, [key, obj])
+	const setStateAndHiddenState = useCallback((newState: T) => {
+		obj[key]?.stream?.next(newState)
+	}, [key, obj])
+	return [state, setStateAndHiddenState] as const
 }

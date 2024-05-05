@@ -1,6 +1,6 @@
 {
   "name": "misc-hooks",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "main": "index.cjs",
   "exports": {
     ".": {
@@ -26,6 +26,7 @@
   "dependencies": {
     "add-evt-listener": "^0.1.1",
     "deep-equal": "^2.2.3",
+    "jdefer": "^0.0.14",
     "jmisc": "^0.0.12"
   },
   "devDependencies": {
