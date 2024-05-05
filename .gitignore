@@ -4,11 +4,3 @@ index.cjs
 index.mjs
 index.d.cts
 index.d.mts
-
-.yarn/*
-.pnp.*
-!.yarn/releases
-!.yarn/patches
-!.yarn/sdks
-!.yarn/plugins
-!.yarn/versions

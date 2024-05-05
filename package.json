@@ -10,7 +10,7 @@
     }
   },
   "scripts": {
-    "prepublish": "./compile.sh"
+    "prepublishOnly": "./compile.sh"
   },
   "files": [
     "index.cjs",
@@ -18,9 +18,9 @@
     "index.d.ts"
   ],
   "repository": "https://github.com/tranvansang/misc-hooks",
+  "homepage": "https://github.com/tranvansang/misc-hooks",
   "author": "Sang Tran <t@sang.jp>",
   "license": "MIT",
-  "packageManager": "yarn@3.6.1",
   "dependencies": {
     "add-evt-listener": "^0.1.1",
     "deep-equal": "^2.2.2",
