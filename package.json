@@ -26,7 +26,7 @@
   "dependencies": {
     "add-evt-listener": "^0.1.1",
     "deep-equal": "^2.2.3",
-    "jmisc": "^0.0.10"
+    "jmisc": "^0.0.12"
   },
   "devDependencies": {
     "@types/node": "^20.12.8",
