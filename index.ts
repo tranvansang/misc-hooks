@@ -1,9 +1,7 @@
-import type {Dispatch, MutableRefObject, RefObject, SetStateAction} from 'react'
-import {IBroadcastStream, makeBroadcastStream} from 'jdefer'
+import type {Dispatch, MutableRefObject, SetStateAction} from 'react'
 import {useCallback, useEffect, useId, useLayoutEffect, useReducer, useRef, useState} from 'react'
+import {makeBroadcastStream} from 'jdefer'
 import deepEqual from 'deep-equal'
-import addEvtListener from 'add-evt-listener'
-import {isBrowser} from 'jmisc'
 
 type OptionalArraySub<T extends readonly unknown[],
 	R extends readonly unknown[]> = number extends R['length']
@@ -20,12 +18,6 @@ export type OptionalArray<T extends readonly unknown[]> = number extends T['leng
 export const nextStateFromAction = <T>(action: SetStateAction<T>, state: T): T => typeof action === 'function'
 	? (action as (cur: T) => T)(state)
 	: action
-
-type NoPromise<T> = T extends Promise<any> ? never : T
-const destroyChainSync = <T>(chain: (void | (() => NoPromise<T>))[]) => {
-	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-	for (const destroy of chain.slice().reverse()) destroy?.()
-}
 
 // return [state, toggle]
 export const useToggle = (
@@ -101,9 +93,9 @@ export const useDebounce = <T>(value: T, timeout: number) => {
 	return debouncedValue
 }
 
-export const useDeepMemo = <T>(val: T) => {
+export const useDeepMemo = <T>(val: T, isEqual: (cur: T, next: T) => boolean = deepEqual) => {
 	const ref = useRef(val)
-	if (ref.current !== val && !deepEqual(ref.current, val)) ref.current = val
+	if (ref.current !== val && !isEqual(ref.current, val)) ref.current = val
 	return ref.current
 }
 
@@ -268,112 +260,38 @@ export const useRefValue = <T>(value: T) => {
 	return ref
 }
 
-// delay state change if animation/transition is running
-// note: ref.current must be defined from the first effect
-export function useAnimationState<T>(elmRef: RefObject<Element>, initialValue: T): [T, Dispatch<SetStateAction<T>>]
-export function useAnimationState<T = undefined>(elmRef: RefObject<Element>): [
-		T | undefined,
-	Dispatch<SetStateAction<T | undefined>>
-]
-
-// note: if the animation fires before javascript is loaded, animationstart/transitionstart is not fired.
-// this usually happens.
-export function useAnimationState<T>(elmRef: RefObject<Element>, value?: T) {
-	const [state, setState, lastStateRef] = useRefState(value)
-	const animatingRef = useRef(false)
-	const transitioningRef = useRef(false)
-	const hasPendingStateRef = useRef(false)
-	const pendingStateRef = useRef<T>()
-
-	useEffect(() => {
-		const {current} = elmRef
-
-		if (current) {
-			const onEnd = () => {
-				if (!animatingRef.current && !transitioningRef.current && hasPendingStateRef.current) {
-					setState(pendingStateRef.current)
-					hasPendingStateRef.current = false
-					pendingStateRef.current = undefined
-				}
-			}
-			const remove = [
-				addEvtListener(current, 'animationstart', () => {
-					animatingRef.current = true
-				}),
-				addEvtListener(current, 'animationend', () => {
-					animatingRef.current = false
-					onEnd()
-				}),
-				addEvtListener(current, 'animationcancel', () => {
-					animatingRef.current = false
-					onEnd()
-				}),
-				addEvtListener(current, 'transitionstart', () => {
-					transitioningRef.current = true
-				}),
-				addEvtListener(current, 'transitionend', () => {
-					transitioningRef.current = false
-					onEnd()
-				}),
-				addEvtListener(current, 'transitioncancel', () => {
-					transitioningRef.current = false
-					onEnd()
-				}),
-			]
-
-			return () => {
-				destroyChainSync(remove)
-			}
-		}
-	}, [elmRef, setState])
-
-	const safeSetState = useCallback((setStateAction: SetStateAction<T | undefined>) => {
-		requestAnimationFrame(() => {
-			if (animatingRef.current || transitioningRef.current) {
-				pendingStateRef.current = nextStateFromAction(
-					setStateAction,
-					hasPendingStateRef.current ? pendingStateRef.current : lastStateRef.current
-				)
-				hasPendingStateRef.current = true
-			} else setState(setStateAction)
-		})
-	}, [lastStateRef, setState])
-
-	return [state, safeSetState]
-}
-
 // falsy to disable
-export const useConfirmDiscard = (msg?: string) => {
-	useEffect(() => {
-		if (msg) return addEvtListener(
-			window,
-			'beforeunload',
-			e => {
-				e.preventDefault()
-				// @ts-ignore
-				e.returnValue = msg
-			},
-			{capture: true}
-		)
-	}, [msg])
-}
-
-export const useIsoLayoutEffect = isBrowser ? useLayoutEffect : useEffect
-
-export const useWindowSize = () => {
-	const [size, setSize] = useState({
-		width: isBrowser ? window.innerWidth : undefined,
-		height: isBrowser ? window.innerHeight : undefined
-	})
-	useEffect(() => addEvtListener(
-		window,
-		'resize',
-		() => requestAnimationFrame(() => setSize({
-			width: window.innerWidth,
-			height: window.innerHeight,
-		}))), [])
-	return size
-}
+// 	- `useConfirmDiscard(msg)`: show confirm dialog when user tries to reload the page. `msg` is the message to show. If `msg` is falsy, the confirm dialog is disabled.
+// export const useConfirmDiscard = (msg?: string) => {
+// 	useEffect(() => {
+// 		if (msg) return addEvtListener(
+// 			window,
+// 			'beforeunload',
+// 			e => {
+// 				e.preventDefault()
+// 				// @ts-ignore
+// 				e.returnValue = msg
+// 			},
+// 			{capture: true}
+// 		)
+// 	}, [msg])
+// }
+//
+// 	- `[width, height] = useWindowSize()`: get window size, listen to `resize` event of `window`. In SSR, `width` and `height` are `undefined`. Note: be careful when handling hydration mismatch.
+// export const useWindowSize = () => {
+// 	const [size, setSize] = useState({
+// 		width: typeof window === 'object' ? window.innerWidth : undefined,
+// 		height: typeof window === 'object' ? window.innerHeight : undefined
+// 	})
+// 	useEffect(() => addEvtListener(
+// 		window,
+// 		'resize',
+// 		() => requestAnimationFrame(() => setSize({
+// 			width: window.innerWidth,
+// 			height: window.innerHeight,
+// 		}))), [])
+// 	return size
+// }
 
 export function usePropState<S>(initialState: S | (() => S)): {
 	value: S
@@ -477,18 +395,31 @@ export function useListData<T>(
 	}
 }
 
-export function useHiddenState<T>(obj: any, key: any, defaultValue?: T | (() => T)) {
-	const [state, setState] = useState<T>(() => obj[key]?.state ?? (typeof defaultValue === 'function' ? (defaultValue as () => T)() : defaultValue))
-	useEffect(() => {
-		// init state if not exist
-		const hiddenState: {
-			stream: IBroadcastStream<T>
-			state?: T
-		} = obj[key] ?? {}
-		return (hiddenState.stream ??= makeBroadcastStream()).listen(setState)
-	}, [key, obj])
-	const setStateAndHiddenState = useCallback((newState: T) => {
-		obj[key]?.stream?.next(newState)
-	}, [key, obj])
-	return [state, setStateAndHiddenState] as const
+export interface AtomState<T> {
+	get value(): T
+	set value(v: T)
+	sub(subscriber: (v: T) => any): () => void
+}
+export function makeAtom<T>(): AtomState<T | undefined>
+export function makeAtom<T>(initial: T): AtomState<T>
+export function makeAtom<T>(initial?: T | undefined) {
+	let value = initial
+	const stream = makeBroadcastStream<T>()
+	return {
+		get value() {
+			return value!
+		},
+		set value(v: T) {
+			value = v
+			stream.next(v)
+		},
+		sub(subscriber: (v: T) => any) {
+			return stream.listen(subscriber)
+		}
+	}
+}
+export const useAtom = <T>(atom: AtomState<T>) => {
+	const [state, setState] = useState(atom.value)
+	useEffect(() => atom.sub(setState), [atom])
+	return state
 }

@@ -1,6 +1,6 @@
 {
   "name": "misc-hooks",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "main": "index.cjs",
   "exports": {
     ".": {
@@ -24,15 +24,14 @@
   "author": "Sang Tran <t@sang.jp>",
   "license": "MIT",
   "dependencies": {
-    "add-evt-listener": "^0.1.1",
     "deep-equal": "^2.2.3",
-    "jdefer": "^0.0.14",
-    "jmisc": "^0.0.12"
+    "jdefer": "^0.0.14"
   },
   "devDependencies": {
-    "@types/node": "^20.12.8",
     "@types/react": "^18.3.1",
-    "type-fest": "^4.18.1",
     "typescript": "^5.4.5"
+  },
+  "peerDependencies": {
+    "react": "*"
   }
 }
