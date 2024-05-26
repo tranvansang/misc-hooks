@@ -41,7 +41,7 @@ export declare function usePropState<S = undefined>(): {
     setValue: Dispatch<SetStateAction<S | undefined>>;
 };
 export declare const useScopeId: (prefix?: string) => (name?: string) => string;
-export declare const useUpdate: <T>(getValue: () => T) => [T, import("react").DispatchWithoutAction];
+export declare const useUpdate: <T>(getValue: (current?: T) => T) => [T, import("react").DispatchWithoutAction];
 export declare const useKeep: <T>(value: T) => T;
 export declare function useListData<T>({ load, initial, }: {
     initial?: {
