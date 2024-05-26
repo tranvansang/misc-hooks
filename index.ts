@@ -324,7 +324,7 @@ export const useScopeId = (prefix?: string) => {
 	return useCallback((name?: string) => `${prefix ?? ''}${id}${name ?? ''}`, [id, prefix])
 }
 
-export const useUpdate = <T>(getValue: () => T) => useReducer(getValue, getValue())
+export const useUpdate = <T>(getValue: (current?: T) => T) => useReducer(getValue, getValue())
 
 // only update when value is not undefined
 export const useKeep = <T>(value: T): T => {
