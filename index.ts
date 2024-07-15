@@ -324,6 +324,7 @@ export const useScopeId = (prefix?: string) => {
 	return useCallback((name?: string) => `${prefix ?? ''}${id}${name ?? ''}`, [id, prefix])
 }
 
+// https://github.com/facebook/react/issues/16295
 export const useUpdate = <T>(getValue: (current?: T) => T) => useReducer(getValue, undefined, getValue)
 
 // only update when value is not undefined
@@ -419,7 +420,12 @@ export function makeAtom<T>(initial?: T | undefined) {
 	}
 }
 export const useAtom = <T>(atom: AtomState<T>) => {
-	const [state, setState] = useState(atom.value)
-	useEffect(() => atom.sub(setState), [atom])
+	const [state, setState, ref] = useRefState(atom.value)
+	useEffect(() => {
+		const unsub = atom.sub(setState)
+		// value might be updated before the first effect
+		if (ref.current !== atom.value) setState(atom.value)
+		return unsub
+	}, [atom, ref, setState])
 	return state
 }
