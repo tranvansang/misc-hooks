@@ -14,20 +14,31 @@ type OptionalArraySub<T extends readonly unknown[],
 export type OptionalArray<T extends readonly unknown[]> = number extends T['length']
 	? (T[number] | undefined)[]
 	: OptionalArraySub<T, []>
+
 // https://github.com/facebook/react/blob/ddd1faa1972b614dfbfae205f2aa4a6c0b39a759/packages/react-dom/src/server/ReactPartialRendererHooks.js#L251
-export const nextStateFromAction = <T>(action: SetStateAction<T>, state: T): T => typeof action === 'function'
-	? (action as (cur: T) => T)(state)
-	: action
+export function nextStateFromAction<T>(action: SetStateAction<T>, state: T): T {
+	return typeof action === 'function'
+		? (action as (cur: T) => T)(state)
+		: action
+}
+
 
 // return [state, toggle]
-export const useToggle = (
+export function useToggle(
 	init = false
-): [boolean, (state?: boolean) => void] => useReducer((state: boolean, action?: boolean) => action ?? !state, init)
+): [boolean, (state?: boolean) => void] {
+	return useReducer((state: boolean, action?: boolean) => action ?? !state, init)
+}
 
-export const useTurnOff = (): [boolean, () => void] => useReducer(() => false, true)
-export const useTurnOn = (): [boolean, () => void] => useReducer(() => true, false)
+export function useTurnOff(): [boolean, () => void] {
+	return useReducer(() => false, true)
+}
 
-export const useUnmountedRef = () => {
+export function useTurnOn(): [boolean, () => void] {
+	return useReducer(() => true, false)
+}
+
+export function useUnmountedRef() {
 	const unmountedRef = useRef(false)
 	useEffect(() => {
 		unmountedRef.current = false // react18? requires this?
@@ -37,14 +48,14 @@ export const useUnmountedRef = () => {
 	return unmountedRef
 }
 
-export const useMountedRef = () => {
+export function useMountedRef() {
 	const mountedRef = useRef(false)
 	// note: do not set to false on unmount
 	useEffect(() => void (mountedRef.current = true), [])
 	return mountedRef
 }
 
-export const useMounted = () => {
+export function useMounted() {
 	const [mounted, enable] = useTurnOn()
 	useEffect(enable, [enable])
 	return mounted
@@ -63,7 +74,7 @@ export const useMounted = () => {
 // 	}
 // }
 
-export const useTimedOut = (timeout: number) => {
+export function useTimedOut(timeout: number) {
 	const [timedOut, enable] = useTurnOn()
 	useEffect(() => {
 		let cancelled = false
@@ -78,7 +89,7 @@ export const useTimedOut = (timeout: number) => {
 	return timedOut
 }
 
-export const useDebounce = <T>(value: T, timeout: number) => {
+export function useDebounce<T>(value: T, timeout: number) {
 	const [debouncedValue, setDebouncedValue] = useState(value)
 	useEffect(() => {
 		let cancelled = false
@@ -93,13 +104,13 @@ export const useDebounce = <T>(value: T, timeout: number) => {
 	return debouncedValue
 }
 
-export const useDeepMemo = <T>(val: T, isEqual: (cur: T, next: T) => boolean = deepEqual) => {
+export function useDeepMemo<T>(val: T, isEqual: (cur: T, next: T) => boolean = deepEqual) {
 	const ref = useRef(val)
 	if (ref.current !== val && !isEqual(ref.current, val)) ref.current = val
 	return ref.current
 }
 
-export const useForceUpdate = () => {
+export function useForceUpdate() {
 	const countRef = useRef(0)
 	const mountedRef = useMountedRef()
 	const [, forceUpdate] = useReducer(() => countRef.current, countRef.current)
@@ -108,7 +119,8 @@ export const useForceUpdate = () => {
 		if (mountedRef.current) forceUpdate()
 	}, [mountedRef])
 }
-export const usePrevRef = <T>(value: T) => {
+
+export function usePrevRef<T>(value: T) {
 	const currentRef = useRef<T>()
 	const prevRef = useRef<T>()
 	prevRef.current = currentRef.current
@@ -116,8 +128,9 @@ export const usePrevRef = <T>(value: T) => {
 	return prevRef
 }
 
+
 // todo: need to check if deps really changed
-export const useDefaultState = <T>(defaultState: T) => {
+export function useDefaultState<T>(defaultState: T) {
 	const [state, setState] = useState(defaultState)
 	useEffect(() => {
 		setState(() => defaultState)
@@ -141,10 +154,10 @@ export const useDefaultState = <T>(defaultState: T) => {
 // 	}, [])] as const
 // }
 
-export const useEffectWithPrevDeps = <T extends readonly unknown[]>(
+export function useEffectWithPrevDeps<T extends readonly unknown[]>(
 	effect: (prevDeps: OptionalArray<T>) => (void | (() => void | undefined)),
 	deps: T
-) => {
+) {
 	const depsRef = useRef<T>()
 	useEffect(
 		() => {
@@ -157,10 +170,10 @@ export const useEffectWithPrevDeps = <T extends readonly unknown[]>(
 	)
 }
 
-export const useLayoutEffectWithPrevDeps = <T extends readonly unknown[]>(
+export function useLayoutEffectWithPrevDeps<T extends readonly unknown[]>(
 	effect: (prevDeps: OptionalArray<T>) => (void | (() => void | undefined)),
 	deps: T
-) => {
+) {
 	const depsRef = useRef<T>()
 	useLayoutEffect(
 		() => {
@@ -173,10 +186,10 @@ export const useLayoutEffectWithPrevDeps = <T extends readonly unknown[]>(
 	)
 }
 
-export const useEffectOnce = <T extends readonly unknown[]>(
+export function useEffectOnce<T extends readonly unknown[]>(
 	effect: () => (void | (() => void | undefined)),
 	deps: T
-) => {
+) {
 	const firedRef = useRef(false)
 	useEffect(
 		() => {
@@ -228,11 +241,12 @@ export function useRefState<T>(initialValue?: T) {
 }
 
 // never create a hook like useAtomic, atomic(promise).
+
 // the purpose of atomic maker is to prevent racing, but the atomic(promise) wil always trigger the promise.
-export const useAtomicMaker = (): [
+export function useAtomicMaker(): [
 	boolean,
 	<T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | void>)
-] => {
+] {
 	const [loading, setLoading, lastLoadingRef] = useRefState(false)
 	return [loading, useCallback(<T, V>(func: (...params: T[]) => V) => async (...params: T[]) => {
 		if (lastLoadingRef.current) return
@@ -245,16 +259,17 @@ export const useAtomicMaker = (): [
 	}, [setLoading, lastLoadingRef])]
 }
 
-export const useAtomicCallback = <T, V extends Promise<any>>(
+export function useAtomicCallback<T, V extends Promise<any>>(
 	cb: (...params: T[]) => V
-): [boolean, (...params: T[]) => Promise<V | void>] => {
+): [boolean, (...params: T[]) => Promise<V | void>] {
 	const [loading, makeAtomic] = useAtomicMaker()
 	return [loading, useCallback((...params) => makeAtomic(cb)(...params), [makeAtomic, cb])]
 }
 
 // similar to useEffectEvent
+
 // https://react.dev/learn/separating-events-from-effects
-export const useRefValue = <T>(value: T) => {
+export function useRefValue<T>(value: T) {
 	const ref = useRef(value)
 	ref.current = value
 	return ref
@@ -318,17 +333,22 @@ export function usePropState<S>(initialState?: S) {
 // native useId is not that simple to be used in SSR.
 // it requires the consistent virtual DOM tree.
 // https://github.com/facebook/react/pull/22644
+
 // https://github.com/vercel/next.js/pull/31102/files
-export const useScopeId = (prefix?: string) => {
+export function useScopeId(prefix?: string) {
 	const id = useId()
 	return useCallback((name?: string) => `${prefix ?? ''}${id}${name ?? ''}`, [id, prefix])
 }
 
+
 // https://github.com/facebook/react/issues/16295
-export const useUpdate = <T>(getValue: (current?: T) => T) => useReducer(getValue, undefined, getValue)
+export function useUpdate<T>(getValue: (current?: T) => T) {
+	return useReducer(getValue, undefined, getValue)
+}
+
 
 // only update when value is not undefined
-export const useKeep = <T>(value: T): T => {
+export function useKeep<T>(value: T): T {
 	const ref = useRef(value)
 	if (value !== undefined) ref.current = value
 	return value ?? ref.current
@@ -419,7 +439,8 @@ export function makeAtom<T>(initial?: T | undefined) {
 		}
 	}
 }
-export const useAtom = <T>(atom: AtomState<T>) => {
+
+export function useAtom<T>(atom: AtomState<T>) {
 	const [state, setState, ref] = useRefState(atom.value)
 	useEffect(() => {
 		const unsub = atom.sub(setState)
