@@ -1,4 +1,4 @@
-import type {Dispatch, MutableRefObject, SetStateAction} from 'react'
+import {Dispatch, MutableRefObject, SetStateAction, useSyncExternalStore} from 'react'
 import {useCallback, useEffect, useId, useLayoutEffect, useReducer, useRef, useState} from 'react'
 import {makeBroadcastStream} from 'jdefer'
 import deepEqual from 'deep-equal'
@@ -441,12 +441,5 @@ export function makeAtom<T>(initial?: T | undefined) {
 }
 
 export function useAtom<T>(atom: AtomState<T>) {
-	const [state, setState, ref] = useRefState(atom.value)
-	useEffect(() => {
-		const unsub = atom.sub(setState)
-		// value might be updated before the first effect
-		if (ref.current !== atom.value) setState(atom.value)
-		return unsub
-	}, [atom, ref, setState])
-	return state
+	return useSyncExternalStore(atom.sub, () => atom.value, () => atom.value)
 }
