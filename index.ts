@@ -245,11 +245,11 @@ export function useRefState<T>(initialValue?: T) {
 // the purpose of atomic maker is to prevent racing, but the atomic(promise) wil always trigger the promise.
 export function useAtomicMaker(): [
 	boolean,
-	<T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | void>)
+	<T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V>)
 ] {
 	const [loading, setLoading, lastLoadingRef] = useRefState(false)
 	return [loading, useCallback(<T, V>(func: (...params: T[]) => V) => async (...params: T[]) => {
-		if (lastLoadingRef.current) return
+		if (lastLoadingRef.current) return undefined as unknown as V
 		setLoading(true)
 		try {
 			return await func(...params)
@@ -261,7 +261,7 @@ export function useAtomicMaker(): [
 
 export function useAtomicCallback<T, V extends Promise<any>>(
 	cb: (...params: T[]) => V
-): [boolean, (...params: T[]) => Promise<V | void>] {
+): [boolean, (...params: T[]) => Promise<V>] {
 	const [loading, makeAtomic] = useAtomicMaker()
 	return [loading, useCallback((...params) => makeAtomic(cb)(...params), [makeAtomic, cb])]
 }

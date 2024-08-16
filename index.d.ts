@@ -31,9 +31,9 @@ export declare function useRefState<T = undefined>(): [
 ];
 export declare function useAtomicMaker(): [
     boolean,
-    <T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | void>)
+    <T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V>)
 ];
-export declare function useAtomicCallback<T, V extends Promise<any>>(cb: (...params: T[]) => V): [boolean, (...params: T[]) => Promise<V | void>];
+export declare function useAtomicCallback<T, V extends Promise<any>>(cb: (...params: T[]) => V): [boolean, (...params: T[]) => Promise<V>];
 export declare function useRefValue<T>(value: T): MutableRefObject<T>;
 export declare function usePropState<S>(initialState: S | (() => S)): {
     value: S;
