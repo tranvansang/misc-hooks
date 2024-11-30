@@ -446,7 +446,7 @@ export function useAtom<T>(atom: AtomState<T>) {
 	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
 }
 
-export type State<T> = {
+export type AsyncState<T> = {
 	data: T
 	error?: undefined
 } | {
@@ -458,17 +458,17 @@ export type State<T> = {
 }
 
 /**
- *  Only fetch on first render, to re-fetch call reload()
+ *  Only run on first render, to re-run, must call reload()
  * @return {data, error, reload}
- * data is undefined and error is undefined: the fetch is not finished
+ * data is undefined and error is undefined: the call is not finished
  * data and error never be defined at the same time
- * reload(): returns the result of fetchFn()
+ * reload(): returns the result of asyncFn()
  */
-export default function useFetch<T>(
-	fetchFn: () => Promise<T> | T, // never return undefined
+export function useAsync<T>(
+	asyncFn: () => Promise<T> | T, // never return undefined
 	getInitial?: () => T | undefined // may throw an error
-): State<T> & {reload(this: void): Promise<T>} {
-	const [state, setState] = useState<State<T>>(() => {
+): AsyncState<T> & {reload(this: void): Promise<T>} {
+	const [state, setState] = useState<AsyncState<T>>(() => {
 		if (!getInitial) return {}
 		try {
 			return {data: getInitial() as T}
@@ -479,7 +479,7 @@ export default function useFetch<T>(
 
 	async function load(){
 		setState({})
-		const promise = (async () => fetchFn())() // Promise.try proposal
+		const promise = (async () => asyncFn())() // Promise.try proposal
 		try {setState({data: await promise}) // https://github.com/reactwg/react-18/discussions/82
 		} catch (error) {setState({error})}
 		return promise
