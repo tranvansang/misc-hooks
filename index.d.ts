@@ -85,4 +85,25 @@ export interface AtomState<T> {
 export declare function makeAtom<T>(): AtomState<T | undefined>;
 export declare function makeAtom<T>(initial: T): AtomState<T>;
 export declare function useAtom<T>(atom: AtomState<T>): T;
+export type AsyncState<T> = {
+    data: T;
+    error?: undefined;
+} | {
+    data?: undefined;
+    error: unknown;
+} | {
+    data?: undefined;
+    error?: undefined;
+};
+/**
+ *  Only run on first render, to re-run, must call reload()
+ * @return {data, error, reload}
+ * data is undefined and error is undefined: the call is not finished
+ * data and error never be defined at the same time
+ * reload(): returns the result of asyncFn()
+ */
+export declare function useAsync<T>(asyncFn: () => Promise<T> | T, // never return undefined
+getInitial?: () => T | undefined): AsyncState<T> & {
+    reload(this: void): Promise<T>;
+};
 export {};
