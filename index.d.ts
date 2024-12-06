@@ -77,14 +77,14 @@ export declare function useListData<T>({ load, initial, }: {
     hasNext: boolean;
     hasPrev: boolean;
 };
-export interface AtomState<T> {
+export interface Atom<T> {
     get value(): T;
     set value(v: T);
     sub(subscriber: (v: T) => any): () => void;
 }
-export declare function makeAtom<T>(): AtomState<T | undefined>;
-export declare function makeAtom<T>(initial: T): AtomState<T>;
-export declare function useAtom<T>(atom: AtomState<T>): T;
+export declare function makeAtom<T>(): Atom<T | undefined>;
+export declare function makeAtom<T>(initial: T): Atom<T>;
+export declare function useAtom<T>(atom: Atom<T>): T;
 export type AsyncState<T> = {
     data: T;
     error?: undefined;

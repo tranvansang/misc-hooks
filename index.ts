@@ -416,13 +416,13 @@ export function useListData<T>(
 	}
 }
 
-export interface AtomState<T> {
+export interface Atom<T> {
 	get value(): T
 	set value(v: T)
 	sub(subscriber: (v: T) => any): () => void
 }
-export function makeAtom<T>(): AtomState<T | undefined>
-export function makeAtom<T>(initial: T): AtomState<T>
+export function makeAtom<T>(): Atom<T | undefined>
+export function makeAtom<T>(initial: T): Atom<T>
 export function makeAtom<T>(initial?: T | undefined) {
 	let value = initial
 	const stream = makeBroadcastStream<T>()
@@ -440,7 +440,7 @@ export function makeAtom<T>(initial?: T | undefined) {
 	}
 }
 
-export function useAtom<T>(atom: AtomState<T>) {
+export function useAtom<T>(atom: Atom<T>) {
 	// useSyncExternalStore requires getServerSnapshot to return the same value
 	const [value] = useState(atom.value)
 	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
