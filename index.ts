@@ -465,7 +465,7 @@ export type AsyncState<T> = {
  * reload(): returns the result of asyncFn()
  */
 export function useAsync<T>(
-	asyncFn: (staledRef: MutableRefObject<boolean>) => Promise<T> | T, // never return undefined
+	asyncFn: (abortSignal: AbortSignal) => Promise<T> | T, // never return undefined
 	getInitial?: () => T | undefined // may throw an error
 ): AsyncState<T> & {reload(this: void): Promise<T>} {
 	const [state, setState] = useState<AsyncState<T>>(() => {
@@ -477,22 +477,23 @@ export function useAsync<T>(
 		}
 	})
 	
-	const countRef = useRef(0)
+	const abortControllerRef = useRef(new AbortController())
 
-	async function load(){
-		const count = ++countRef.current
+	async function load(ignoreResult: boolean){
+		abortControllerRef.current.abort()
+		const abortController = new AbortController()
+		abortControllerRef.current = abortController
 		
 		setState({})
-		const promise = (async () => asyncFn(
-			{
-				get current() {
-					return countRef.current !== count
-				}
-			}
-		))() // Promise.try proposal
-		try {setState({data: await promise}) // https://github.com/reactwg/react-18/discussions/82
-		} catch (error) {setState({error})}
-		return promise
+		const promise = (async () => asyncFn(abortController.signal))() // Promise.try proposal
+		try {
+			const data = await promise
+			if (!abortController.signal.aborted) setState({data}) // https://github.com/reactwg/react-18/discussions/82
+		} catch (error) {
+			if (!abortController.signal.aborted) setState({error})
+		}
+		if (!ignoreResult) return promise
+		return undefined as unknown as T
 	}
 
 	const loadRef = useRef(load)
@@ -501,9 +502,10 @@ export function useAsync<T>(
 	const initStateRef = useRef(state)
 	useEffect(() => {
 		// only load if data is not available
-		if (initStateRef.current.data === undefined && initStateRef.current.error === undefined) loadRef.current()
+		// this is important to support ssr loading
+		if (initStateRef.current.data === undefined && initStateRef.current.error === undefined) loadRef.current(true)
 	}, [])
 
-	const reload = useCallback(() => loadRef.current(), [])
+	const reload = useCallback(() => loadRef.current(false as const), [])
 	return {...state, reload}
 }

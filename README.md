@@ -17,8 +17,8 @@
 ### `useAsync()` - Async data loading hook
 
 - Signature: `useAsync<T>(asyncFn, getInitial)`.
-	- `asyncFn: (staledRef: MutableRefObject<boolean>) => Promise<T> | T`: a function that returns the data or a promise which resolves to the data.
-  - `staledRef.current` is `true` if the data is staled, i.e., there is a newer request to load the data.
+	- `asyncFn: (abortSignal: AbortSignal) => Promise<T> | T`: a function that returns the data or a promise which resolves to the data.
+  - `abortSignal`: an `AbortSignal` object that is aborted when there is a new call to `reload()`.
 	- `getInitial?: () => T | undefined`: an optional function that returns the initial data.
 		If not provided, the initial data is `undefined`.
 		`getInitial()` can return `undefined`, `getInitial` can be absent, or it can throw an error.
@@ -58,6 +58,27 @@ return error // has error
 			? <Loading/>
 			: null
 ```
+
+#### SSR support:
+
+`getInitial` is called in only in the server render, and in the first client render.
+
+- In server side, in `getInitial`:
+	- If data is available, return the data synchronously.
+	- If data is not available:
+		- Return `undefined` synchronously
+    - Trigger data loading, retain the promise for later use.
+    - Mark the render not ready continue rendering.
+    - Wait for the data to be loaded.
+    - Re-render the component with the loaded data.
+- In client side:
+	- Store SSR data before hydration.
+  - Use `useEffect()` to clear the SSR data: `useEffect(() => clearSSRData(), [])`.
+  - In `getInitial`:
+		- If data is available, return the data synchronously.
+		- If data is not available: - Return `undefined` synchronously.
+
+Note that the data load is called only in the first render, to reload the data, you need to call `reload()`.
 
 ## Other Exported Hooks
 

@@ -102,7 +102,7 @@ export type AsyncState<T> = {
  * data and error never be defined at the same time
  * reload(): returns the result of asyncFn()
  */
-export declare function useAsync<T>(asyncFn: (staledRef: MutableRefObject<boolean>) => Promise<T> | T, // never return undefined
+export declare function useAsync<T>(asyncFn: (abortSignal: AbortSignal) => Promise<T> | T, // never return undefined
 getInitial?: () => T | undefined): AsyncState<T> & {
     reload(this: void): Promise<T>;
 };
