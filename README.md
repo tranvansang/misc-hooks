@@ -17,7 +17,8 @@
 ### `useAsync()` - Async data loading hook
 
 - Signature: `useAsync<T>(asyncFn, getInitial)`.
-	- `asyncFn: () => Promise<T> | T`: a function that returns the data or a promise which resolves to the data.
+	- `asyncFn: (staledRef: MutableRefObject<boolean>) => Promise<T> | T`: a function that returns the data or a promise which resolves to the data.
+  - `staledRef.current` is `true` if the data is staled, i.e., there is a newer request to load the data.
 	- `getInitial?: () => T | undefined`: an optional function that returns the initial data.
 		If not provided, the initial data is `undefined`.
 		`getInitial()` can return `undefined`, `getInitial` can be absent, or it can throw an error.
@@ -32,7 +33,7 @@
 	If you want to reload the data, you need to call `reload()`.
 - 
 ```typescript
-const {data, error, reload} = useAsync(() => loadData(params))
+const {data, error, reload} = useAsync((staledRef) => loadData(params))
 // when params changes, you need to manually call reload()
 useEffect(() => void reload(), [params, reload]) // `reload` value never changes
 ```
@@ -42,18 +43,21 @@ useEffect(() => void reload(), [params, reload]) // `reload` value never changes
 - When calling `reload()`, `error` and `data` are immediately/synchronously set to `undefined` (via `setState`) and the data is reloaded.
 - If you want to keep the last data while reloading, for example, to keep the last page of a paginated list until the new page is loaded, use `useKeep` hook described at thee end of this document.
 - If you want to delay showing the loading indicator, use `useTimedOut` hook described at the end of this document.
+- For now, both `data` and `Error`'s types are defined. We will improve the type definition in the future.
+
+Sample usage:
 ```tsx
-const {data, error, reload} = useAsync(() => loadData(params))
+const {data, error, reload} = useAsync((staledRef) => loadData(params))
 const timedOut = useTimedOut(500)
+const dataKeep = useKeep(data)
 return error // has error
 	? <ErrorPage/>
-	: data // has data
-		? <Data data={data}/>
+	: dataKeep // has data
+		? <Data data={dataKeep}/>
 		: timedOut // loading
 			? <Loading/>
 			: null
 ```
-- For now, both `data` and `Error`'s types are defined. We will improve the type definition in the future.
 
 ## Other Exported Hooks
 

@@ -465,7 +465,7 @@ export type AsyncState<T> = {
  * reload(): returns the result of asyncFn()
  */
 export function useAsync<T>(
-	asyncFn: () => Promise<T> | T, // never return undefined
+	asyncFn: (staledRef: MutableRefObject<boolean>) => Promise<T> | T, // never return undefined
 	getInitial?: () => T | undefined // may throw an error
 ): AsyncState<T> & {reload(this: void): Promise<T>} {
 	const [state, setState] = useState<AsyncState<T>>(() => {
@@ -476,10 +476,20 @@ export function useAsync<T>(
 			return {error}
 		}
 	})
+	
+	const countRef = useRef(0)
 
 	async function load(){
+		const count = ++countRef.current
+		
 		setState({})
-		const promise = (async () => asyncFn())() // Promise.try proposal
+		const promise = (async () => asyncFn(
+			{
+				get current() {
+					return countRef.current !== count
+				}
+			}
+		))() // Promise.try proposal
 		try {setState({data: await promise}) // https://github.com/reactwg/react-18/discussions/82
 		} catch (error) {setState({error})}
 		return promise
