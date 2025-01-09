@@ -1,6 +1,6 @@
 {
   "name": "misc-hooks",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "main": "index.cjs",
   "exports": {
     ".": {
@@ -25,7 +25,7 @@
   "license": "MIT",
   "dependencies": {
     "deep-equal": "^2.2.3",
-    "jdefer": "^0.0.14"
+    "jdefer": "^0.2.0"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",
