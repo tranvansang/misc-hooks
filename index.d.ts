@@ -31,9 +31,9 @@ export declare function useRefState<T = undefined>(): [
 ];
 export declare function useAtomicMaker(): [
     boolean,
-    <T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V>)
+    <T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | undefined>)
 ];
-export declare function useAtomicCallback<T, V extends Promise<any>>(cb: (...params: T[]) => V): [boolean, (...params: T[]) => Promise<V>];
+export declare function useAtomicCallback<T, V extends Promise<any>>(cb: (...params: T[]) => V): [boolean, (...params: T[]) => Promise<V | undefined>];
 export declare function useRefValue<T>(value: T): MutableRefObject<T>;
 export declare function usePropState<S>(initialState: S | (() => S)): {
     value: S;
@@ -85,25 +85,27 @@ export interface Atom<T> {
 export declare function makeAtom<T>(): Atom<T | undefined>;
 export declare function makeAtom<T>(initial: T): Atom<T>;
 export declare function useAtom<T>(atom: Atom<T>): T;
-export type AsyncState<T> = {
+type Disposer = ReturnType<typeof makeDisposer>;
+export declare function makeDisposer(): {
+    addDispose(this: void, dispose?: () => void): () => void;
+    dispose(this: void): void;
+    signal: AbortSignal;
+};
+type AsyncState<T> = {
     data: T;
     error?: undefined;
+    loading: false;
 } | {
     data?: undefined;
     error: unknown;
+    loading: false;
 } | {
     data?: undefined;
     error?: undefined;
+    loading: boolean;
 };
-/**
- *  Only run on first render, to re-run, must call reload()
- * @return {data, error, reload}
- * data is undefined and error is undefined: the call is not finished
- * data and error never be defined at the same time
- * reload(): returns the result of asyncFn()
- */
-export declare function useAsync<T>(asyncFn: (abortSignal: AbortSignal) => Promise<T> | T, // never return undefined
-getInitial?: () => T | undefined): AsyncState<T> & {
+export declare function useAsync<T>(asyncFn: (disposer: Omit<Disposer, 'dispose'>) => Promise<T> | T, getInitial?: () => T | undefined): AsyncState<T> & {
     reload(this: void): Promise<T>;
 };
+export declare function useAsyncEffect(asyncFn: (disposer: Omit<Disposer, 'dispose'>) => any, deps: readonly any[]): void;
 export {};

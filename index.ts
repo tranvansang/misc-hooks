@@ -163,7 +163,7 @@ export function useEffectWithPrevDeps<T extends readonly unknown[]>(
 		() => {
 			const {current} = depsRef
 			depsRef.current = deps
-			if (!deepEqual(current, deps)) return effect((current || []) as unknown as OptionalArray<T>)
+			return effect((current || []) as unknown as OptionalArray<T>)
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		deps
@@ -245,11 +245,11 @@ export function useRefState<T>(initialValue?: T) {
 // the purpose of atomic maker is to prevent racing, but the atomic(promise) wil always trigger the promise.
 export function useAtomicMaker(): [
 	boolean,
-	<T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V>)
+	<T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | undefined>)
 ] {
 	const [loading, setLoading, lastLoadingRef] = useRefState(false)
 	return [loading, useCallback(<T, V>(func: (...params: T[]) => V) => async (...params: T[]) => {
-		if (lastLoadingRef.current) return undefined as unknown as V
+		if (lastLoadingRef.current) return
 		setLoading(true)
 		try {
 			return await func(...params)
@@ -261,13 +261,12 @@ export function useAtomicMaker(): [
 
 export function useAtomicCallback<T, V extends Promise<any>>(
 	cb: (...params: T[]) => V
-): [boolean, (...params: T[]) => Promise<V>] {
+): [boolean, (...params: T[]) => Promise<V | undefined>] {
 	const [loading, makeAtomic] = useAtomicMaker()
 	return [loading, useCallback((...params) => makeAtomic(cb)(...params), [makeAtomic, cb])]
 }
 
 // similar to useEffectEvent
-
 // https://react.dev/learn/separating-events-from-effects
 export function useRefValue<T>(value: T) {
 	const ref = useRef(value)
@@ -446,58 +445,54 @@ export function useAtom<T>(atom: Atom<T>) {
 	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
 }
 
-type AsyncState<T> = {
-	data: T
-	error?: undefined
-} | {
-	data?: undefined
-	error: unknown
-} | {
-	data?: undefined
-	error?: undefined
-}
-
 type Disposer = ReturnType<typeof makeDisposer>
 export function makeDisposer() {
 	const disposeFns: ((() => void) | undefined)[] = []
 	const abortController = new AbortController()
 	return {
-		addDispose(this: void, fn?: () => void) {
+		addDispose(this: void, dispose?: () => void) {
 			if (abortController.signal.aborted) {
-				fn?.()
+				dispose?.()
 				return () => {}
 			}
-			disposeFns.push(fn)
+			disposeFns.push(dispose)
 			return () => {
-				const idx = disposeFns.indexOf(fn)
+				const idx = disposeFns.indexOf(dispose)
 				if (idx !== -1) disposeFns.splice(idx, 1)
 			}
 		},
 		dispose(this: void) {
 			abortController.abort()
-			for (const fn of disposeFns.slice().reverse()) fn?.()
+			for (const dispose of disposeFns.slice().reverse()) dispose?.()
 		},
 		signal: abortController.signal,
 	}
 }
 
-/**
- *  Only run on first render, to re-run, must call reload()
- * @return {data, error, reload}
- * data is undefined and error is undefined: the call is not finished
- * data and error never be defined at the same time
- * reload(): returns the result of asyncFn()
- */
+type AsyncState<T> = {
+	data: T
+	error?: undefined
+	loading: false
+} | {
+	data?: undefined
+	error: unknown
+	loading: false
+} | {
+	data?: undefined
+	error?: undefined
+	loading: boolean
+}
+
 export function useAsync<T>(
-	asyncFn: (disposer: Omit<Disposer, 'dispose'>) => Promise<T> | T, // never return undefined
+	asyncFn: (disposer: Omit<Disposer, 'dispose'>) => Promise<T> | T,
 	getInitial?: () => T | undefined // may throw an error
-): AsyncState<T> & {reload(this: void): Promise<T>} {
+): AsyncState<T> & { reload(this: void): Promise<T> } {
 	const [state, setState] = useState<AsyncState<T>>(() => {
-		if (!getInitial) return {}
+		if (!getInitial) return {loading: false} as const
 		try {
-			return {data: getInitial() as T}
+			return {data: getInitial() as T, loading: false} as const
 		} catch (error) {
-			return {error}
+			return {error, loading: false} as const
 		}
 	})
 	
@@ -507,36 +502,43 @@ export function useAsync<T>(
 			disposerRef.current = undefined
 		}, [])
 
-	async function load(ignoreResult: boolean){
+	const loadRef = useRefValue(load)
+	const reload = useCallback(() => loadRef.current(), [loadRef])
+	
+	return {...state, reload}
+
+	async function load(){
 		disposerRef.current?.dispose()
 		const disposer = makeDisposer()
 		disposerRef.current = disposer
-		
-		setState({})
+
+		setState({loading: true})
 		const promise = (async () => asyncFn({
 			signal: disposer.signal,
 			addDispose: disposer.addDispose,
 		}))() // Promise.try proposal
 		try {
 			const data = await promise
-			if (!disposer.signal.aborted) setState({data}) // https://github.com/reactwg/react-18/discussions/82
+			if (!disposer.signal.aborted) setState({data, loading: false}) // https://github.com/reactwg/react-18/discussions/82
 		} catch (error) {
-			if (!disposer.signal.aborted) setState({error})
+			if (!disposer.signal.aborted) setState({error, loading: false})
 		}
-		if (!ignoreResult) return promise
-		return undefined as unknown as T
+		return promise
 	}
+}
 
-	const loadRef = useRef(load)
-	loadRef.current = load
-
-	const initStateRef = useRef(state)
+export function useAsyncEffect(
+	asyncFn: (disposer: Omit<Disposer, 'dispose'>) => any,
+	deps: readonly any[]
+) {
 	useEffect(() => {
-		// only load if data is not available
-		// this is important to support ssr loading
-		if (initStateRef.current.data === undefined && initStateRef.current.error === undefined) loadRef.current(true)
-	}, [])
-
-	const reload = useCallback(() => loadRef.current(false as const), [])
-	return {...state, reload}
+		const disposer = makeDisposer()
+		;(async () => {
+			disposer.addDispose(await asyncFn({
+				signal: disposer.signal,
+				addDispose: disposer.addDispose,
+			}))
+		})()
+		return disposer.dispose
+	}, deps)
 }
