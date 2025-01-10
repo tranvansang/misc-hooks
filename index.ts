@@ -446,7 +446,7 @@ export function useAtom<T>(atom: Atom<T>) {
 	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
 }
 
-export type AsyncState<T> = {
+type AsyncState<T> = {
 	data: T
 	error?: undefined
 } | {
@@ -457,6 +457,30 @@ export type AsyncState<T> = {
 	error?: undefined
 }
 
+type Disposer = ReturnType<typeof makeDisposer>
+export function makeDisposer() {
+	const disposeFns: ((() => void) | undefined)[] = []
+	const abortController = new AbortController()
+	return {
+		addDispose(this: void, fn?: () => void) {
+			if (abortController.signal.aborted) {
+				fn?.()
+				return () => {}
+			}
+			disposeFns.push(fn)
+			return () => {
+				const idx = disposeFns.indexOf(fn)
+				if (idx !== -1) disposeFns.splice(idx, 1)
+			}
+		},
+		dispose(this: void) {
+			abortController.abort()
+			for (const fn of disposeFns.slice().reverse()) fn?.()
+		},
+		signal: abortController.signal,
+	}
+}
+
 /**
  *  Only run on first render, to re-run, must call reload()
  * @return {data, error, reload}
@@ -465,7 +489,7 @@ export type AsyncState<T> = {
  * reload(): returns the result of asyncFn()
  */
 export function useAsync<T>(
-	asyncFn: (abortSignal: AbortSignal) => Promise<T> | T, // never return undefined
+	asyncFn: (disposer: Omit<Disposer, 'dispose'>) => Promise<T> | T, // never return undefined
 	getInitial?: () => T | undefined // may throw an error
 ): AsyncState<T> & {reload(this: void): Promise<T>} {
 	const [state, setState] = useState<AsyncState<T>>(() => {
@@ -477,20 +501,27 @@ export function useAsync<T>(
 		}
 	})
 	
-	const abortControllerRef = useRef(new AbortController())
+	const disposerRef = useRef<Disposer>()
+	useEffect(() => () => {
+			disposerRef.current?.dispose()
+			disposerRef.current = undefined
+		}, [])
 
 	async function load(ignoreResult: boolean){
-		abortControllerRef.current.abort()
-		const abortController = new AbortController()
-		abortControllerRef.current = abortController
+		disposerRef.current?.dispose()
+		const disposer = makeDisposer()
+		disposerRef.current = disposer
 		
 		setState({})
-		const promise = (async () => asyncFn(abortController.signal))() // Promise.try proposal
+		const promise = (async () => asyncFn({
+			signal: disposer.signal,
+			addDispose: disposer.addDispose,
+		}))() // Promise.try proposal
 		try {
 			const data = await promise
-			if (!abortController.signal.aborted) setState({data}) // https://github.com/reactwg/react-18/discussions/82
+			if (!disposer.signal.aborted) setState({data}) // https://github.com/reactwg/react-18/discussions/82
 		} catch (error) {
-			if (!abortController.signal.aborted) setState({error})
+			if (!disposer.signal.aborted) setState({error})
 		}
 		if (!ignoreResult) return promise
 		return undefined as unknown as T
