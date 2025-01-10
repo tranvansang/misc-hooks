@@ -4,7 +4,7 @@
 
 import { describe, expect, test } from 'vitest'
 import {act, renderHook} from '@testing-library/react'
-import {AtomState, makeAtom, useAtom, useRefState} from './index'
+import {Atom, makeAtom, useAtom, useRefState} from './index'
 import {useEffect, useState, useSyncExternalStore} from 'react'
 
 describe('useAtom', () => {
@@ -48,7 +48,7 @@ describe('useAtom', () => {
 			act(() => atom.value = 3)
 			expect(result.current).toBe(3)
 
-			function useTestAtom<T>(atom: AtomState<T>) {
+			function useTestAtom<T>(atom: Atom<T>) {
 				const [state, setState] = useState(atom.value)
 				useEffect(() => atom.sub(setState), [atom])
 				return state
@@ -63,7 +63,7 @@ describe('useAtom', () => {
 			expect(result.current).toBe(0)
 
 
-			function useTestAtom<T>(atom: AtomState<T>) {
+			function useTestAtom<T>(atom: Atom<T>) {
 				const [state, setState] = useState(atom.value)
 				useEffect(() => atom.sub(setState), [atom])
 				if (!inited) {
@@ -79,7 +79,7 @@ describe('useAtom', () => {
 			const { result, rerender} = renderHook(() => useTestAtom(atom))
 			expect(result.current).toBe(1)
 
-			function useTestAtom<T>(atom: AtomState<T>) {
+			function useTestAtom<T>(atom: Atom<T>) {
 				const [state, setState, ref] = useRefState(atom.value)
 				useEffect(() => {
 					const unsub = atom.sub(setState)
@@ -100,7 +100,7 @@ describe('useAtom', () => {
 			const { result, rerender} = renderHook(() => useTestAtom(atom))
 			expect(result.current).toBe(1)
 
-			function useTestAtom<T>(atom: AtomState<T>) {
+			function useTestAtom<T>(atom: Atom<T>) {
 				const state = useSyncExternalStore(atom.sub, () => atom.value, () => atom.value)
 				if (!inited) {
 					atom.value = 1
@@ -115,7 +115,7 @@ describe('useAtom', () => {
 			const { result, rerender} = renderHook(() => useTestAtom(atom))
 			expect(result.current).toBe(1)
 
-			function useTestAtom<T>(atom: AtomState<T>) {
+			function useTestAtom<T>(atom: Atom<T>) {
 				const state = useSyncExternalStore(atom.sub, () => atom.value)
 				if (!inited) {
 					atom.value = 1
@@ -156,7 +156,7 @@ describe('useAtom', () => {
 			act(() => atom.value = 3)
 			expect(cnt).toBe(5)
 
-			function useTestAtom<T>(atom: AtomState<T>) {
+			function useTestAtom<T>(atom: Atom<T>) {
 				cnt++
 				const [state, setState] = useState(atom.value)
 				useEffect(() => atom.sub(setState), [atom])
@@ -210,7 +210,7 @@ describe('useAtom', () => {
 			exp++
 			expect(cnt).toBe(exp)
 
-			function useTestAtom<T>(atom: AtomState<T>) {
+			function useTestAtom<T>(atom: Atom<T>) {
 				cnt++
 				return useSyncExternalStore(atom.sub, () => atom.value, () => atom.value)
 			}
