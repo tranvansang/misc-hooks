@@ -85,7 +85,7 @@ export interface Atom<T> {
 export declare function makeAtom<T>(): Atom<T | undefined>;
 export declare function makeAtom<T>(initial: T): Atom<T>;
 export declare function useAtom<T>(atom: Atom<T>): T;
-type Disposer = ReturnType<typeof makeDisposer>;
+export type Disposer = ReturnType<typeof makeDisposer>;
 export declare function makeDisposer(): {
     addDispose(this: void, dispose?: () => void): () => void;
     dispose(this: void): void;

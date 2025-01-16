@@ -445,7 +445,7 @@ export function useAtom<T>(atom: Atom<T>) {
 	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
 }
 
-type Disposer = ReturnType<typeof makeDisposer>
+export type Disposer = ReturnType<typeof makeDisposer>
 export function makeDisposer() {
 	const disposeFns: ((() => void) | undefined)[] = []
 	const abortController = new AbortController()
