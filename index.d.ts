@@ -104,8 +104,12 @@ type AsyncState<T> = {
     error?: undefined;
     loading: boolean;
 };
-export declare function useAsync<T>(asyncFn: (disposer: Omit<Disposer, 'dispose'>) => Promise<T> | T, getInitial?: () => T | undefined): AsyncState<T> & {
-    reload(this: void): Promise<T>;
+export declare function useAsync<T, Params extends any[]>(asyncFn: (disposer: {
+    signal: Disposer['signal'];
+    addDispose: Disposer['addDispose'];
+    params: Params;
+}) => Promise<T> | T, getInitial?: () => T | undefined): AsyncState<T> & {
+    reload(this: void, ...params: Params): Promise<T>;
 };
 export declare function useAsyncEffect(asyncFn: (disposer: Omit<Disposer, 'dispose'>) => any, deps: readonly any[]): void;
 export {};

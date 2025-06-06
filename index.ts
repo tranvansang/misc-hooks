@@ -483,10 +483,14 @@ type AsyncState<T> = {
 	loading: boolean
 }
 
-export function useAsync<T>(
-	asyncFn: (disposer: Omit<Disposer, 'dispose'>) => Promise<T> | T,
+export function useAsync<T, Params extends any[]>(
+	asyncFn: (disposer: {
+		signal: Disposer['signal']
+		addDispose: Disposer['addDispose']
+		params: Params
+	}) => Promise<T> | T,
 	getInitial?: () => T | undefined // may throw an error
-): AsyncState<T> & { reload(this: void): Promise<T> } {
+): AsyncState<T> & { reload(this: void, ...params: Params): Promise<T> } {
 	const [state, setState] = useState<AsyncState<T>>(() => {
 		if (!getInitial) return {loading: false} as const
 		try {
@@ -495,7 +499,7 @@ export function useAsync<T>(
 			return {error, loading: false} as const
 		}
 	})
-	
+
 	const disposerRef = useRef<Disposer>()
 	useEffect(() => () => {
 			disposerRef.current?.dispose()
@@ -503,11 +507,11 @@ export function useAsync<T>(
 		}, [])
 
 	const loadRef = useRefValue(load)
-	const reload = useCallback(() => loadRef.current(), [loadRef])
-	
+	const reload = useCallback((...params: Params) => loadRef.current(...params), [loadRef])
+
 	return {...state, reload}
 
-	async function load(){
+	async function load(...params: Params){
 		disposerRef.current?.dispose()
 		const disposer = makeDisposer()
 		disposerRef.current = disposer
@@ -516,6 +520,7 @@ export function useAsync<T>(
 		const promise = (async () => asyncFn({
 			signal: disposer.signal,
 			addDispose: disposer.addDispose,
+			params,
 		}))() // Promise.try proposal
 		try {
 			const data = await promise
