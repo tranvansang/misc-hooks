@@ -1,25 +1,54 @@
-# misc-hooks - Precious React Hooks Library
+# misc-hooks
 
-## 1. `makeAtom(), useAtom(atom)` A Simple State Management Hook
+[![npm version](https://badge.fury.io/js/misc-hooks.svg)](https://www.npmjs.com/package/misc-hooks)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A collection of essential React hooks for state management, async operations, and common UI patterns.
+
+## Installation
+
+```bash
+npm install misc-hooks
+# or
+yarn add misc-hooks
+# or
+pnpm add misc-hooks
+```
+
+## Features
+
+- **State Management**: Simple atomic state with `makeAtom()` and `useAtom()`
+- **Async Operations**: Enhanced async handling with `useAsync()` and `useAsyncEffect()`
+- **Atomic Actions**: Prevent concurrent executions with `useAtomicCallback()` and `useAtomicMaker()`
+- **Utility Hooks**: Common patterns like `useDebounce()`, `useDeepMemo()`, `useKeep()`, and more
+- **TypeScript**: Full TypeScript support with exported types
+- **SSR Support**: Server-side rendering compatibility with `getInitial` pattern
+- **Zero Config**: No providers or wrappers needed
+
+## API Reference
+
+### 1. State Management: `makeAtom()` and `useAtom()`
+
+Simple reactive state management without providers.
 
 ### Sample Usage
 
 ```typescript
-  // create atom
-  const atom = makeAtom<T>()
-  const atom = makeAtom<T>(initialValue) // with initial value
+// create atom
+const atom = makeAtom<T>()
+const atomWithInitial = makeAtom<T>(initialValue) // with initial value
 
-  // use atom in React component
-  const value = useAtom(atom)
+// use atom in React component
+const value = useAtom(atom)
 
-  // getter and setter
-  atom.value = newValue // set value synchronously
-  value = atom.value // get value synchronously
+// getter and setter
+atom.value = newValue // set value synchronously
+const currentValue = atom.value // get value synchronously
 
 // subscribe for changes
-  unsub = atom.sub(val => console.log(val))
-  unsub = atom.sub(() => console.log(atom.value))
-  unsub() // unsubscribe
+const unsub = atom.sub(val => console.log(val))
+const unsub2 = atom.sub(() => console.log(atom.value))
+unsub() // unsubscribe
 ```
 
 ### API
@@ -28,7 +57,9 @@
 - `useAtom(atom: Atom<T>): T`: use an atom in a React component.
 - `atom.value`: get or set the value synchronously.
 
-## 2. `useAsyncEffect()` Async Effect Hook And `makeDisposer()` Utility
+### 2. Async Effects: `useAsyncEffect()` and `makeDisposer()`
+
+Handle async operations in effects with proper cleanup.
 
 ### Sample Usage
 
@@ -66,7 +97,9 @@ If `dispose()` method is called before, `fn` is immediately and synchronously ca
 - `signal`: an `AbortSignal` object that is aborted when the `dispose()` method is called.
 - `dispose()`: abort the signal and call all functions added by `addDispose()`.
 
-## 3. `useAsync()` Async Data Loading Hook
+### 3. Data Loading: `useAsync()`
+
+Powerful async data loading with error handling, loading states, and SSR support.
 
 ### Sample Usage
 
@@ -177,7 +210,9 @@ useEffectWithPrevDeps(
 )
 ```
 
-## 4. Atomic Action Hooks
+### 4. Atomic Actions: `useAtomicCallback()` and `useAtomicMaker()`
+
+Prevent concurrent executions of async operations.
 
 ### Sample Usage
 
@@ -228,9 +263,9 @@ The function returns an array `[loading, atomicCb]`:
 - `loading`: a boolean that is `true` when the atomic function is running.
 - `makeAtomic(cb)`: a function to make the argument function `cb` atomic.
 
-## 5. Other Hooks
+### 5. Utility Hooks
 
-### Frequently used hooks
+#### Frequently Used
 - `useEffectWithPrevDeps((prevDeps) => {}, [...deps])`: similar to `useEffect`, but provides previous deps to the effect function.
 - `memoValue = useDeepMemo(value)`: get a memoized value. `value` is compared by `deep-equal` package.
 - `lastDefinedValue = useKeep(value)`: keep the last defined value. When `value` is `undefined`, the last non-`undefined` value is returned.
@@ -241,7 +276,7 @@ The function returns an array `[loading, atomicCb]`:
 - `[state, setState, stateRef] = useRefState(initialState)`: similar to `useState`. `stateRef`'s value is set immediately and synchronously after `setState` is called. Note: `initialState` can not be a function.
 - `update = useForceUpdate()`: get a function to force re-render component.
 
-### Others
+#### Additional Utilities
 - `[state, setState] = useDefaultState(defaultState)`: when `defaultState` changes, set `state` to `defaultState`.
 - `[state, update] = useUpdate(getValue)`: get a function to force re-render component. `getValue` is a function to get the latest value to compare with the previous value. The latest `getValue` is always used (`useReducer` specs).
 - `nextState = nextStateFromAction(action, state)`: get next state from `setState` action.
@@ -275,4 +310,17 @@ The function returns an array `[loading, atomicCb]`:
   }
 })
 ```
+
+## Requirements
+
+- React 18.0 or higher (uses `useSyncExternalStore`)
+- TypeScript 4.0 or higher (for TypeScript users)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT © [Sang Tran](https://github.com/tranvansang)
 
