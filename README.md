@@ -46,8 +46,19 @@ atom.value = newValue // set value synchronously
 const currentValue = atom.value // get value synchronously
 
 // subscribe for changes
-const unsub = atom.sub(val => console.log(val))
+const unsub = atom.sub((newVal, oldVal) => console.log(newVal, oldVal))
 const unsub2 = atom.sub(() => console.log(atom.value))
+
+// subscribe with cleanup
+const unsub3 = atom.sub((newVal) => {
+  const handler = () => console.log('cleanup')
+  window.addEventListener('resize', handler)
+  return () => window.removeEventListener('resize', handler)
+})
+
+// subscribe and run immediately
+const unsub4 = atom.sub((newVal) => console.log(newVal), {now: true})
+
 unsub() // unsubscribe
 ```
 
@@ -56,6 +67,26 @@ unsub() // unsubscribe
 - `makeAtom(initialValue?: T)`: create an atom with an initial value.
 - `useAtom(atom: Atom<T>): T`: use an atom in a React component.
 - `atom.value`: get or set the value synchronously.
+- `atom.sub(subscriber, options?)`: subscribe to value changes. The subscriber receives `(newValue, oldValue)` and can return a cleanup function.
+  - `options.now`: if `true`, the subscriber is called immediately with the current value (both newValue and oldValue will be the same)
+- `combineAtoms(atoms)`: combine multiple atoms into a single atom containing an array of values.
+
+### Combining Atoms
+
+```typescript
+const countAtom = makeAtom(0)
+const nameAtom = makeAtom('John')
+const ageAtom = makeAtom(25)
+
+// Combine multiple atoms
+const combinedAtom = combineAtoms([countAtom, nameAtom, ageAtom])
+
+// Use in component
+const [count, name, age] = useAtom(combinedAtom)
+
+// When any source atom changes, combined atom updates automatically
+countAtom.value = 1 // combinedAtom.value becomes [1, 'John', 25]
+```
 
 ### 2. Async Effects: `useAsyncEffect()` and `makeDisposer()`
 
@@ -104,14 +135,19 @@ Powerful async data loading with error handling, loading states, and SSR support
 ### Sample Usage
 
 ```typescript
-const {data, error, reload, loading} = useAsync(async () => await fetchData(params))
-useEffect(() => {reload().catch(() => {})}, [params, reload]) // load data in first render and when params changes
+// Basic usage
+const {data, error, reload, loading} = useAsync(async () => await fetchData())
+
+// With parameters
+const {data, error, reload, loading} = useAsync(async ({params}) => await fetchData(...params))
+useEffect(() => {reload(id, filter).catch(() => {})}, [id, filter, reload]) // pass params to reload
+
 if (error) throw error // propagate error to ErrorBoundary
 ```
 
 ### API
 
-Signature: `const {error, data, reload, loading} = useAsync<T>(asyncFn, getInitial)`.
+Signature: `const {error, data, reload, loading} = useAsync<T, Params extends any[]>(asyncFn, getInitial)`.
 
 - (required)`asyncFn: (disposer) => Promise<T> | T` is a function that returns the data or a promise resolving the data.
 
@@ -126,9 +162,11 @@ If the component is unmounted or the data is reloaded before, `dispose` is immed
 `addDispose()` returns a function to remove the added function.
 
   - `signal`: an `AbortSignal` object that is aborted when the component is unmounted or the data is reloaded.
+  
+  - `params`: an array of parameters passed to `reload()`.
 
 - `loading`: a boolean that is `true` when the data is loading.
-- `reload`: a function that takes no argument, reloads the data and returns the result of the `asyncFn`.
+- `reload`: a function that reloads the data and returns the result of the `asyncFn`. Can accept parameters that are passed to the async function.
   **`reload` value never changes**, it can be safely used in the second argument of `useEffect`.
   In subsequent renders, `reload` uses the latest function `asyncFn` passed to the hook.
 
@@ -146,8 +184,8 @@ Practice 3: If params is an object, and you want to reload the data when the obj
 Sample usage:
 ```tsx
 const memoParams = useDeepMemo(params)
-const {data, error, reload, loading} = useAsync((disposer) => loadData(memoParams))
-useEffect(() => {reload().catch(() => {})}, [memoParams, reload]) // load data when params deeply changes
+const {data, error, reload, loading} = useAsync(({params}) => loadData(...params))
+useEffect(() => {reload(memoParams).catch(() => {})}, [memoParams, reload]) // load data when params deeply changes
 const timedOut = useTimedOut(500)
 const dataKeep = useKeep(data)
 if (error) throw error
@@ -194,19 +232,19 @@ useEffect(() => void (!dataRef.current && reload().catch(() => {})) , [reload]) 
 Re-load when params changes, client-rendering version without SSR support:
 ```javascript
 const deepParams = useDeepMemo(params)
-const {data, reload} = useAsync(async () => await fetchData(deepParams), () => getSSRData(params))
-useEffect(() => void(reload()), [deepBody, reload])
+const {data, reload} = useAsync(async ({params}) => await fetchData(...params), () => getSSRData(params))
+useEffect(() => void(reload(deepParams)), [deepParams, reload])
 ```
 
 Combine the two to support SSR, only load if data is empty and re-load when params changes: use `useEffectWithPrevDeps()`:
 ```javascript
 const deepParams = useDeepMemo(params)
-const {data, reload} = useAsync(async () => await fetchData(deepParams), () => getSSRData(params))
+const {data, reload} = useAsync(async ({params}) => await fetchData(...params), () => getSSRData(params))
 const dataRef = useRef(data) // or useRefValue(data) or useEffectEvent(data)
 dataRef.current = data
 useEffectWithPrevDeps(
-  ([prevBody, prevReload]) => void ((prevReload || !dataRef.current) && reload().catch(() => {})),
-  [deepBody, reload]
+  ([prevParams, prevReload]) => void ((prevReload || !dataRef.current) && reload(deepParams).catch(() => {})),
+  [deepParams, reload]
 )
 ```
 
@@ -293,6 +331,7 @@ The function returns an array `[loading, atomicCb]`:
 - `{value, setValue} = usePropState(initialState)`: similar to `useState`, but the returned value is an object, not an array.
 - `scopeId = useScopeId(prefix?: string)`: get a function to generate scoped id. `prefix` is the prefix of the id. The id is generated by `scopeId(name?: string) = prefix + id + name`. `id` is a SSR-statically random number generated by `useId()`.
 - Type `OptionalArray` (type).
+- Type `Disposer` (type) - utility type for cleanup management.
 
 - `useListData()`: utility to load list data. Usage:
 ```typescript

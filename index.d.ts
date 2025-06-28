@@ -79,11 +79,16 @@ export declare function useListData<T>({ load, initial, }: {
 };
 export interface Atom<T> {
     get value(): T;
-    set value(v: T);
-    sub(subscriber: (v: T) => any): () => void;
+    set value(newValue: T);
+    sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), options?: {
+        now?: boolean;
+    }): () => void;
 }
 export declare function makeAtom<T>(): Atom<T | undefined>;
 export declare function makeAtom<T>(initial: T): Atom<T>;
+export declare function combineAtoms<T extends readonly any[]>(atoms: {
+    [K in keyof T]: Atom<T[K]>;
+}): Atom<T>;
 export declare function useAtom<T>(atom: Atom<T>): T;
 export type Disposer = ReturnType<typeof makeDisposer>;
 export declare function makeDisposer(): {
