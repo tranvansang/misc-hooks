@@ -428,14 +428,21 @@ export function useListData<T>(
 export interface Atom<T> {
 	get value(): T
 	set value(newValue: T)
-	sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), options?: {now?: boolean}): () => void
+	sub(
+		subscriber: (newValue: T, oldValue: T) => void | (() => void),
+		options?: {now?: boolean, skip?(newValue: T, oldValue: T): boolean}
+	): () => void
 }
 export function makeAtom<T>(): Atom<T | undefined>
 export function makeAtom<T>(initial: T): Atom<T>
 export function makeAtom<T>(initial?: T | undefined) {
 	let value = initial as T
 	let count = 0
-	const subscribers: Record<number, [subscriber: (newValue: T, oldValue: T) => void | (() => void), cleanup: void | (() => void)]> = Object.create(null)
+	const subscribers: Record<number, {
+		subscriber: (newValue: T, oldValue: T) => void | (() => void)
+		cleanup: void | (() => void)
+		skip?(newValue: T, oldValue: T): boolean
+	}> = Object.create(null)
 	return {
 		get value() {
 			return value
@@ -443,18 +450,23 @@ export function makeAtom<T>(initial?: T | undefined) {
 		set value(newValue: T) {
 			const oldValue = value
 			value = newValue
-			for (const pair of Object.values(subscribers)) {
-				pair[1]?.()
-				pair[1] = undefined
-				pair[1] = pair[0](newValue, oldValue)
-			}
+			for (const pair of Object.values(subscribers))
+				if (!pair.skip?.(newValue, oldValue)) {
+					pair.cleanup?.()
+					pair.cleanup = undefined
+					pair.cleanup = pair.subscriber(newValue, oldValue)
+				}
 		},
-		sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), {now = false} = {}) {
+		sub(
+			subscriber: (newValue: T, oldValue: T) => void | (() => void),
+			{now = false, skip}: {now?: boolean, skip?(newValue: T, oldValue: T): boolean} = {}
+		) {
 			const id = count++
-			subscribers[id] = [
+			subscribers[id] = {
 				subscriber,
-				now ? subscriber(value, value) : undefined
-			]
+				cleanup: now && !skip?.(value, value) ? subscriber(value, value) : undefined,
+				skip,
+			}
 			return () => {
 				subscribers[id]?.[1]?.()
 				delete subscribers[id]

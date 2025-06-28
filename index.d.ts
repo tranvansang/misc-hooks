@@ -82,6 +82,7 @@ export interface Atom<T> {
     set value(newValue: T);
     sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), options?: {
         now?: boolean;
+        skip?(newValue: T, oldValue: T): boolean;
     }): () => void;
 }
 export declare function makeAtom<T>(): Atom<T | undefined>;
