@@ -1,5 +1,16 @@
-import {Dispatch, MutableRefObject, SetStateAction, useSyncExternalStore} from 'react'
-import {useCallback, useEffect, useId, useLayoutEffect, useReducer, useRef, useState} from 'react'
+import {
+	Dispatch,
+	RefObject,
+	SetStateAction,
+	useCallback,
+	useEffect,
+	useId,
+	useLayoutEffect,
+	useReducer,
+	useRef,
+	useState,
+	useSyncExternalStore
+} from 'react'
 import deepEqual from 'deep-equal'
 
 type OptionalArraySub<T extends readonly unknown[],
@@ -62,7 +73,7 @@ export function useMounted() {
 
 // export const useAtomicCallback = (
 // 	func: (...args: any[]) => any,
-// 	ref: MutableRefObject<boolean>
+// 	ref: RefObject<boolean>
 // ) => async (...args: any[]) => {
 // 	try {
 // 		if (ref.current) return
@@ -120,8 +131,8 @@ export function useForceUpdate() {
 }
 
 export function usePrevRef<T>(value: T) {
-	const currentRef = useRef<T>()
-	const prevRef = useRef<T>()
+	const currentRef = useRef<T>(undefined)
+	const prevRef = useRef<T>(undefined)
 	prevRef.current = currentRef.current
 	currentRef.current = value
 	return prevRef
@@ -157,7 +168,7 @@ export function useEffectWithPrevDeps<T extends readonly unknown[]>(
 	effect: (prevDeps: OptionalArray<T>) => (void | (() => void | undefined)),
 	deps: T
 ) {
-	const depsRef = useRef<T>()
+	const depsRef = useRef<T>(undefined)
 	useEffect(
 		() => {
 			const {current} = depsRef
@@ -173,7 +184,7 @@ export function useLayoutEffectWithPrevDeps<T extends readonly unknown[]>(
 	effect: (prevDeps: OptionalArray<T>) => (void | (() => void | undefined)),
 	deps: T
 ) {
-	const depsRef = useRef<T>()
+	const depsRef = useRef<T>(undefined)
 	useLayoutEffect(
 		() => {
 			const {current} = depsRef
@@ -202,11 +213,11 @@ export function useEffectOnce<T extends readonly unknown[]>(
 	)
 }
 
-export function useEnhancedState<S>(initialState?: S | (() => S)): [S, Dispatch<SetStateAction<S>>, MutableRefObject<S>]
+export function useEnhancedState<S>(initialState?: S | (() => S)): [S, Dispatch<SetStateAction<S>>, RefObject<S>]
 export function useEnhancedState<S = undefined>(): [
 		S | undefined,
 	Dispatch<SetStateAction<S | undefined>>,
-	MutableRefObject<S | undefined>
+	RefObject<S | undefined>
 ]
 
 export function useEnhancedState<S>(initialState?: S | (() => S)) {
@@ -216,11 +227,11 @@ export function useEnhancedState<S>(initialState?: S | (() => S)) {
 	return [state, setState, stateRef]
 }
 
-export function useRefState<T>(initialValue: T): [T, Dispatch<SetStateAction<T>>, MutableRefObject<T>]
+export function useRefState<T>(initialValue: T): [T, Dispatch<SetStateAction<T>>, RefObject<T>]
 export function useRefState<T = undefined>(): [
 		T | undefined,
 	Dispatch<SetStateAction<T | undefined>>,
-	MutableRefObject<T | undefined>
+	RefObject<T | undefined>
 ]
 
 // a similar implementation is replicated in popup/hooks.tsx's PromptBody
@@ -515,7 +526,7 @@ export function useAsync<T, Params extends any[]>(
 		}
 	})
 
-	const disposerRef = useRef<Disposer>()
+	const disposerRef = useRef<Disposer>(undefined)
 	useEffect(() => () => {
 			disposerRef.current?.dispose()
 			disposerRef.current = undefined
