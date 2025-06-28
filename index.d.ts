@@ -79,10 +79,10 @@ export declare function useListData<T>({ load, initial, }: {
 };
 export interface Atom<T> {
     get value(): T;
-    set value(newValue: T);
-    sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), options?: {
+    set value(val: T);
+    sub(subscriber: (val: T, old: T) => void | (() => void), options?: {
         now?: boolean;
-        skip?(newValue: T, oldValue: T): boolean;
+        skip?(val: T, old: T): boolean;
     }): () => void;
 }
 export declare function makeAtom<T>(): Atom<T | undefined>;
