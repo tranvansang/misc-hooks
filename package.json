@@ -1,6 +1,6 @@
 {
   "name": "misc-hooks",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "main": "index.cjs",
   "exports": {
     ".": {
@@ -24,8 +24,7 @@
   "author": "Sang Tran <t@sang.jp>",
   "license": "MIT",
   "dependencies": {
-    "deep-equal": "^2.2.3",
-    "jdefer": "^0.2.0"
+    "deep-equal": "^2.2.3"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",

@@ -1,6 +1,5 @@
 import {Dispatch, MutableRefObject, SetStateAction, useSyncExternalStore} from 'react'
 import {useCallback, useEffect, useId, useLayoutEffect, useReducer, useRef, useState} from 'react'
-import {makeBroadcastStream} from 'jdefer'
 import deepEqual from 'deep-equal'
 
 type OptionalArraySub<T extends readonly unknown[],
@@ -417,26 +416,42 @@ export function useListData<T>(
 
 export interface Atom<T> {
 	get value(): T
-	set value(v: T)
-	sub(subscriber: (v: T) => any): () => void
+	set value(newValue: T)
+	sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), options?: {now?: boolean}): () => void
 }
 export function makeAtom<T>(): Atom<T | undefined>
 export function makeAtom<T>(initial: T): Atom<T>
 export function makeAtom<T>(initial?: T | undefined) {
-	let value = initial
-	const stream = makeBroadcastStream<T>()
+	let value = initial as T
+	const subscribers = new Map<(newValue: T, oldValue: T) => void | (() => void), void | (() => void)>()
 	return {
 		get value() {
-			return value!
+			return value
 		},
-		set value(v: T) {
-			value = v
-			stream.next(v)
+		set value(newValue: T) {
+			const oldValue = value
+			value = newValue
+			for (const [subscriber, cleanup] of subscribers.entries()) {
+				cleanup?.()
+				subscribers.set(subscriber, subscriber(newValue, oldValue))
+			}
 		},
-		sub(subscriber: (v: T) => any) {
-			return stream.listen(subscriber)
+		sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), {now = false} = {}) {
+			subscribers.get(subscriber)?.()
+			subscribers.set(subscriber, void 0)
+			if (now) subscribers.set(subscriber, subscriber(value, value))
+			return () => {
+				subscribers.get(subscriber)?.()
+				subscribers.delete(subscriber)
+			}
 		}
 	}
+}
+export function combineAtoms<T extends readonly any[]>(atoms: {[K in keyof T]: Atom<T[K]>}): Atom<T> {
+	const atom = makeAtom<T>(atoms.map(a => a.value) as unknown as T)
+	for (const a of atoms)
+		a.sub(() => void (atom.value = atoms.map(a => a.value) as unknown as T))
+	return atom
 }
 
 export function useAtom<T>(atom: Atom<T>) {
