@@ -434,7 +434,8 @@ export function makeAtom<T>(): Atom<T | undefined>
 export function makeAtom<T>(initial: T): Atom<T>
 export function makeAtom<T>(initial?: T | undefined) {
 	let value = initial as T
-	const subscribers = new Map<(newValue: T, oldValue: T) => void | (() => void), void | (() => void)>()
+	let count = 0
+	const subscribers: Record<number, [subscriber: (newValue: T, oldValue: T) => void | (() => void), cleanup: void | (() => void)]> = Object.create(null)
 	return {
 		get value() {
 			return value
@@ -442,18 +443,21 @@ export function makeAtom<T>(initial?: T | undefined) {
 		set value(newValue: T) {
 			const oldValue = value
 			value = newValue
-			for (const [subscriber, cleanup] of subscribers.entries()) {
-				cleanup?.()
-				subscribers.set(subscriber, subscriber(newValue, oldValue))
+			for (const pair of Object.values(subscribers)) {
+				pair[1]?.()
+				pair[1] = undefined
+				pair[1] = pair[0](newValue, oldValue)
 			}
 		},
 		sub(subscriber: (newValue: T, oldValue: T) => void | (() => void), {now = false} = {}) {
-			subscribers.get(subscriber)?.()
-			subscribers.set(subscriber, void 0)
-			if (now) subscribers.set(subscriber, subscriber(value, value))
+			const id = count++
+			subscribers[id] = [
+				subscriber,
+				now ? subscriber(value, value) : undefined
+			]
 			return () => {
-				subscribers.get(subscriber)?.()
-				subscribers.delete(subscriber)
+				subscribers[id]?.[1]?.()
+				delete subscribers[id]
 			}
 		}
 	}
