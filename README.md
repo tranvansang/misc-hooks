@@ -57,7 +57,7 @@ const unsub3 = atom.sub((newVal) => {
 })
 
 // subscribe and run immediately
-const unsub4 = atom.sub((newVal) => console.log(newVal), {now: true})
+const unsub4 = atom.sub((newVal, oldVal) => console.log(newVal, oldVal), {now: true})
 
 // subscribe with conditional updates
 const unsub5 = atom.sub(
@@ -74,7 +74,7 @@ unsub() // unsubscribe
 - `useAtom(atom: Atom<T>): T`: use an atom in a React component.
 - `atom.value`: get or set the value synchronously.
 - `atom.sub(subscriber, options?)`: subscribe to value changes. The subscriber receives `(newValue, oldValue)` and can return a cleanup function.
-  - `options.now`: if `true`, the subscriber is called immediately with the current value (both newValue and oldValue will be the same)
+  - `options.now`: if `true`, the subscriber is called immediately with the current value as newValue and `undefined` as oldValue
   - `options.skip`: a function that receives `(newValue, oldValue)` and returns `true` to skip the subscriber call
 - `combineAtoms(atoms)`: combine multiple atoms into a single atom containing an array of values.
 

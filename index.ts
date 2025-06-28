@@ -464,7 +464,7 @@ export function makeAtom<T>(initial?: T | undefined) {
 			const id = count++
 			subscribers[id] = {
 				subscriber,
-				cleanup: now && !skip?.(value, value) ? subscriber(value, value) : undefined,
+				cleanup: now && !skip?.(value, undefined as T) ? subscriber(value, undefined as T) : undefined,
 				skip,
 			}
 			return () => {
