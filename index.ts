@@ -427,10 +427,10 @@ export function useListData<T>(
 
 export interface Atom<T> {
 	get value(): T
-	set value(newValue: T)
+	set value(val: T)
 	sub(
-		subscriber: (newValue: T, oldValue: T) => void | (() => void),
-		options?: {now?: boolean, skip?(newValue: T, oldValue: T): boolean}
+		subscriber: (val: T, old: T) => void | (() => void),
+		options?: {now?: boolean, skip?(val: T, old: T): boolean}
 	): () => void
 }
 export function makeAtom<T>(): Atom<T | undefined>
@@ -439,27 +439,27 @@ export function makeAtom<T>(initial?: T | undefined) {
 	let value = initial as T
 	let count = 0
 	const subscribers: Record<number, {
-		subscriber: (newValue: T, oldValue: T) => void | (() => void)
+		subscriber: (val: T, old: T) => void | (() => void)
 		cleanup: void | (() => void)
-		skip?(newValue: T, oldValue: T): boolean
+		skip?(val: T, old: T): boolean
 	}> = Object.create(null)
 	return {
 		get value() {
 			return value
 		},
-		set value(newValue: T) {
-			const oldValue = value
-			value = newValue
+		set value(val: T) {
+			const old = value
+			value = val
 			for (const pair of Object.values(subscribers))
-				if (!pair.skip?.(newValue, oldValue)) {
+				if (!pair.skip?.(val, old)) {
 					pair.cleanup?.()
 					pair.cleanup = undefined
-					pair.cleanup = pair.subscriber(newValue, oldValue)
+					pair.cleanup = pair.subscriber(val, old)
 				}
 		},
 		sub(
-			subscriber: (newValue: T, oldValue: T) => void | (() => void),
-			{now = false, skip}: {now?: boolean, skip?(newValue: T, oldValue: T): boolean} = {}
+			subscriber: (val: T, old: T) => void | (() => void),
+			{now = false, skip}: {now?: boolean, skip?(val: T, old: T): boolean} = {}
 		) {
 			const id = count++
 			subscribers[id] = {
