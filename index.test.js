@@ -1,0 +1,184 @@
+/**
+ * @vitest-environment jsdom
+ */
+import { describe, expect, test } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { makeAtom, useAtom, useRefState } from './index';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+describe('useAtom', () => {
+    test('exported function', async () => {
+        const atom = makeAtom(0);
+        // Change atom value before rendering the hook
+        atom.value = 1;
+        const { result, rerender } = renderHook(() => useAtom(atom));
+        expect(result.current).toBe(1);
+        // external change
+        atom.value = 2;
+        expect(result.current).toBe(1);
+        rerender();
+        expect(result.current).toBe(2);
+        // internal change
+        act(() => atom.value = 3);
+        expect(result.current).toBe(3);
+    });
+    describe('check value', () => {
+        test('typical renderHook cannot test', async () => {
+            const atom = makeAtom(0);
+            // Change atom value before rendering the hook
+            atom.value = 1;
+            const { result, rerender } = renderHook(() => useTestAtom(atom));
+            expect(result.current).toBe(1);
+            // external change
+            atom.value = 2;
+            expect(result.current).toBe(1);
+            rerender();
+            expect(result.current).toBe(2);
+            // internal change
+            act(() => atom.value = 3);
+            expect(result.current).toBe(3);
+            function useTestAtom(atom) {
+                const [state, setState] = useState(atom.value);
+                useEffect(() => atom.sub(setState), [atom]);
+                return state;
+            }
+        });
+        test('atom no check', async () => {
+            let inited = false;
+            const atom = makeAtom(0);
+            const { result, rerender } = renderHook(() => useTestAtom(atom));
+            expect(result.current).toBe(0);
+            function useTestAtom(atom) {
+                const [state, setState] = useState(atom.value);
+                useEffect(() => atom.sub(setState), [atom]);
+                if (!inited) {
+                    atom.value = 1;
+                    inited = true;
+                }
+                return state;
+            }
+        });
+        test('atom check', async () => {
+            let inited = false;
+            const atom = makeAtom(0);
+            const { result, rerender } = renderHook(() => useTestAtom(atom));
+            expect(result.current).toBe(1);
+            function useTestAtom(atom) {
+                const [state, setState, ref] = useRefState(atom.value);
+                useEffect(() => {
+                    const unsub = atom.sub(setState);
+                    // value might be updated before the first effect
+                    if (ref.current !== atom.value)
+                        setState(atom.value);
+                    return unsub;
+                }, [atom, ref, setState]);
+                if (!inited) {
+                    atom.value = 1;
+                    inited = true;
+                }
+                return state;
+            }
+        });
+        test('atom sync external atom', async () => {
+            let inited = false;
+            const atom = makeAtom(0);
+            const { result, rerender } = renderHook(() => useTestAtom(atom));
+            expect(result.current).toBe(1);
+            function useTestAtom(atom) {
+                const state = useSyncExternalStore(atom.sub, () => atom.value, () => atom.value);
+                if (!inited) {
+                    atom.value = 1;
+                    inited = true;
+                }
+                return state;
+            }
+        });
+        test('atom sync external atom no server snapshot', async () => {
+            let inited = false;
+            const atom = makeAtom(0);
+            const { result, rerender } = renderHook(() => useTestAtom(atom));
+            expect(result.current).toBe(1);
+            function useTestAtom(atom) {
+                const state = useSyncExternalStore(atom.sub, () => atom.value);
+                if (!inited) {
+                    atom.value = 1;
+                    inited = true;
+                }
+                return state;
+            }
+        });
+    });
+    describe('check rendering count', () => {
+        test('useState version always fire', async () => {
+            let cnt = 0;
+            const atom = makeAtom(0);
+            // Change atom value before rendering the hook
+            atom.value = 1;
+            const { rerender } = renderHook(() => useTestAtom(atom));
+            expect(cnt).toBe(1);
+            // external change
+            atom.value = 2;
+            expect(cnt).toBe(1);
+            rerender();
+            expect(cnt).toBe(2);
+            // external change same value
+            atom.value = 2;
+            expect(cnt).toBe(2);
+            rerender();
+            expect(cnt).toBe(3);
+            // internal change
+            act(() => atom.value = 3);
+            expect(cnt).toBe(4);
+            // internal change same value
+            act(() => atom.value = 3);
+            expect(cnt).toBe(5);
+            function useTestAtom(atom) {
+                cnt++;
+                const [state, setState] = useState(atom.value);
+                useEffect(() => atom.sub(setState), [atom]);
+                return state;
+            }
+        });
+        test('atom sync external atom', async () => {
+            let cnt = 0;
+            let exp = 0;
+            const atom = makeAtom(0);
+            // Change atom value before rendering the hook
+            atom.value = 1;
+            const { result, rerender } = renderHook(() => useTestAtom(atom));
+            exp++;
+            expect(cnt).toBe(exp);
+            // nochange
+            rerender();
+            exp++;
+            expect(cnt).toBe(exp);
+            // external change, no affect, but mark one re-render
+            atom.value = 2;
+            expect(cnt).toBe(exp);
+            rerender();
+            exp++;
+            exp++;
+            expect(cnt).toBe(exp);
+            // external change same value
+            atom.value = 2;
+            expect(cnt).toBe(exp);
+            rerender();
+            exp++;
+            expect(cnt).toBe(exp);
+            // internal change
+            act(() => atom.value = 3);
+            exp++;
+            // internal change same value
+            act(() => atom.value = 3);
+            expect(cnt).toBe(exp);
+            // internal change diff value
+            act(() => atom.value = 4);
+            exp++;
+            expect(cnt).toBe(exp);
+            function useTestAtom(atom) {
+                cnt++;
+                return useSyncExternalStore(atom.sub, () => atom.value, () => atom.value);
+            }
+        });
+    });
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXgudGVzdC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbImluZGV4LnRlc3QudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7O0dBRUc7QUFFSCxPQUFPLEVBQUUsUUFBUSxFQUFFLE1BQU0sRUFBRSxJQUFJLEVBQUUsTUFBTSxRQUFRLENBQUE7QUFDL0MsT0FBTyxFQUFDLEdBQUcsRUFBRSxVQUFVLEVBQUMsTUFBTSx3QkFBd0IsQ0FBQTtBQUN0RCxPQUFPLEVBQU8sUUFBUSxFQUFFLE9BQU8sRUFBRSxXQUFXLEVBQUMsTUFBTSxTQUFTLENBQUE7QUFDNUQsT0FBTyxFQUFDLFNBQVMsRUFBRSxRQUFRLEVBQUUsb0JBQW9CLEVBQUMsTUFBTSxPQUFPLENBQUE7QUFFL0QsUUFBUSxDQUFDLFNBQVMsRUFBRSxHQUFHLEVBQUU7SUFDeEIsSUFBSSxDQUFDLG1CQUFtQixFQUFFLEtBQUssSUFBSSxFQUFFO1FBQ3BDLE1BQU0sSUFBSSxHQUFHLFFBQVEsQ0FBQyxDQUFDLENBQUMsQ0FBQTtRQUV4Qiw4Q0FBOEM7UUFDOUMsSUFBSSxDQUFDLEtBQUssR0FBRyxDQUFDLENBQUE7UUFFZCxNQUFNLEVBQUUsTUFBTSxFQUFFLFFBQVEsRUFBQyxHQUFHLFVBQVUsQ0FBQyxHQUFHLEVBQUUsQ0FBQyxPQUFPLENBQUMsSUFBSSxDQUFDLENBQUMsQ0FBQTtRQUMzRCxNQUFNLENBQUMsTUFBTSxDQUFDLE9BQU8sQ0FBQyxDQUFDLElBQUksQ0FBQyxDQUFDLENBQUMsQ0FBQTtRQUU5QixrQkFBa0I7UUFDbEIsSUFBSSxDQUFDLEtBQUssR0FBRyxDQUFDLENBQUE7UUFDZCxNQUFNLENBQUMsTUFBTSxDQUFDLE9BQU8sQ0FBQyxDQUFDLElBQUksQ0FBQyxDQUFDLENBQUMsQ0FBQTtRQUM5QixRQUFRLEVBQUUsQ0FBQTtRQUNWLE1BQU0sQ0FBQyxNQUFNLENBQUMsT0FBTyxDQUFDLENBQUMsSUFBSSxDQUFDLENBQUMsQ0FBQyxDQUFBO1FBRTlCLGtCQUFrQjtR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

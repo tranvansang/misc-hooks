@@ -1,4 +1,8 @@
 import { Dispatch, RefObject, SetStateAction } from 'react';
+import { type Atom, makeAtom, combineAtoms } from './atom.js';
+import { type Disposer, makeDisposer } from './disposer.js';
+export { type Atom, makeAtom, combineAtoms };
+export { type Disposer, makeDisposer };
 type OptionalArraySub<T extends readonly unknown[], R extends readonly unknown[]> = number extends R['length'] ? never : number extends T['length'] ? never : T['length'] extends R['length'] ? R : OptionalArraySub<T, [...R, undefined | T[R['length']]]>;
 export type OptionalArray<T extends readonly unknown[]> = number extends T['length'] ? (T[number] | undefined)[] : OptionalArraySub<T, []>;
 export declare function nextStateFromAction<T>(action: SetStateAction<T>, state: T): T;
@@ -77,26 +81,7 @@ export declare function useListData<T>({ load, initial, }: {
     hasNext: boolean;
     hasPrev: boolean;
 };
-export interface Atom<T> {
-    get value(): T;
-    set value(val: T);
-    sub(subscriber: (val: T, old: T) => void | (() => void), options?: {
-        now?: boolean;
-        skip?(val: T, old: T): boolean;
-    }): () => void;
-}
-export declare function makeAtom<T>(): Atom<T | undefined>;
-export declare function makeAtom<T>(initial: T): Atom<T>;
-export declare function combineAtoms<T extends readonly any[]>(atoms: {
-    [K in keyof T]: Atom<T[K]>;
-}): Atom<T>;
 export declare function useAtom<T>(atom: Atom<T>): T;
-export type Disposer = ReturnType<typeof makeDisposer>;
-export declare function makeDisposer(): {
-    addDispose(this: void, dispose?: () => void): () => void;
-    dispose(this: void): void;
-    signal: AbortSignal;
-};
 type AsyncState<T> = {
     data: T;
     error?: undefined;
@@ -118,4 +103,3 @@ export declare function useAsync<T, Params extends any[]>(asyncFn: (disposer: {
     reload(this: void, ...params: Params): Promise<T>;
 };
 export declare function useAsyncEffect(asyncFn: (disposer: Omit<Disposer, 'dispose'>) => any, deps: readonly any[]): void;
-export {};

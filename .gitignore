@@ -1,7 +1,7 @@
 .idea
 node_modules/
-index.cjs
-index.mjs
-index.d.cts
-index.d.mts
+/*.cjs
+/*.mjs
+/*.d.cts
+/*.d.mts
 CLAUDE.md

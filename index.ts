@@ -12,6 +12,11 @@ import {
 	useSyncExternalStore
 } from 'react'
 import deepEqual from 'deep-equal'
+import {type Atom, makeAtom, combineAtoms} from './atom.js'
+import {type Disposer, makeDisposer} from './disposer.js'
+
+export {type Atom, makeAtom, combineAtoms}
+export {type Disposer, makeDisposer}
 
 type OptionalArraySub<T extends readonly unknown[],
 	R extends readonly unknown[]> = number extends R['length']
@@ -425,90 +430,10 @@ export function useListData<T>(
 	}
 }
 
-export interface Atom<T> {
-	get value(): T
-	set value(val: T)
-	sub(
-		subscriber: (val: T, old: T) => void | (() => void),
-		options?: {now?: boolean, skip?(val: T, old: T): boolean}
-	): () => void
-}
-export function makeAtom<T>(): Atom<T | undefined>
-export function makeAtom<T>(initial: T): Atom<T>
-export function makeAtom<T>(initial?: T | undefined) {
-	let value = initial as T
-	let count = 0
-	const subscribers: Record<number, {
-		subscriber: (val: T, old: T) => void | (() => void)
-		cleanup: void | (() => void)
-		skip?(val: T, old: T): boolean
-	}> = Object.create(null)
-	return {
-		get value() {
-			return value
-		},
-		set value(val: T) {
-			const old = value
-			value = val
-			for (const pair of Object.values(subscribers))
-				if (!pair.skip?.(val, old)) {
-					pair.cleanup?.()
-					pair.cleanup = undefined
-					pair.cleanup = pair.subscriber(val, old)
-				}
-		},
-		sub(
-			subscriber: (val: T, old: T) => void | (() => void),
-			{now = false, skip}: {now?: boolean, skip?(val: T, old: T): boolean} = {}
-		) {
-			const id = count++
-			subscribers[id] = {
-				subscriber,
-				cleanup: now && !skip?.(value, undefined as T) ? subscriber(value, undefined as T) : undefined,
-				skip,
-			}
-			return () => {
-				subscribers[id]?.[1]?.()
-				delete subscribers[id]
-			}
-		}
-	}
-}
-export function combineAtoms<T extends readonly any[]>(atoms: {[K in keyof T]: Atom<T[K]>}): Atom<T> {
-	const atom = makeAtom<T>(atoms.map(a => a.value) as unknown as T)
-	for (const a of atoms)
-		a.sub(() => void (atom.value = atoms.map(a => a.value) as unknown as T))
-	return atom
-}
-
 export function useAtom<T>(atom: Atom<T>) {
 	// useSyncExternalStore requires getServerSnapshot to return the same value
 	const [value] = useState(atom.value)
 	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
-}
-
-export type Disposer = ReturnType<typeof makeDisposer>
-export function makeDisposer() {
-	const disposeFns: ((() => void) | undefined)[] = []
-	const abortController = new AbortController()
-	return {
-		addDispose(this: void, dispose?: () => void) {
-			if (abortController.signal.aborted) {
-				dispose?.()
-				return () => {}
-			}
-			disposeFns.push(dispose)
-			return () => {
-				const idx = disposeFns.indexOf(dispose)
-				if (idx !== -1) disposeFns.splice(idx, 1)
-			}
-		},
-		dispose(this: void) {
-			abortController.abort()
-			for (const dispose of disposeFns.slice().reverse()) dispose?.()
-		},
-		signal: abortController.signal,
-	}
 }
 
 type AsyncState<T> = {
