@@ -8,11 +8,7 @@ A collection of essential React hooks for state management, async operations, an
 ## Installation
 
 ```bash
-npm install misc-hooks
-# or
-yarn add misc-hooks
-# or
-pnpm add misc-hooks
+npm i misc-hooks
 ```
 
 ## Features
