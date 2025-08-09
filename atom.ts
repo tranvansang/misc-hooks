@@ -41,7 +41,7 @@ export function makeAtom<T>(initial?: T | undefined) {
 				skip,
 			}
 			return () => {
-				subscribers[id]?.[1]?.()
+				subscribers[id]?.cleanup?.()
 				delete subscribers[id]
 			}
 		}
