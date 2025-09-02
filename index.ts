@@ -4,7 +4,6 @@ import {
 	SetStateAction,
 	useCallback,
 	useEffect,
-	useId,
 	useLayoutEffect,
 	useReducer,
 	useRef,
@@ -12,7 +11,7 @@ import {
 	useSyncExternalStore
 } from 'react'
 import deepEqual from 'deep-equal'
-import {type Atom, makeAtom, combineAtoms} from './atom.js'
+import {type Atom, combineAtoms, makeAtom} from './atom.js'
 import {type Disposer, makeDisposer} from './disposer.js'
 
 export {type Atom, makeAtom, combineAtoms}
@@ -76,19 +75,6 @@ export function useMounted() {
 	return mounted
 }
 
-// export const useAtomicCallback = (
-// 	func: (...args: any[]) => any,
-// 	ref: RefObject<boolean>
-// ) => async (...args: any[]) => {
-// 	try {
-// 		if (ref.current) return
-// 		ref.current = true
-// 		await func(...args)
-// 	} finally {
-// 		ref.current = false
-// 	}
-// }
-
 export function useTimedOut(timeout: number) {
 	const [timedOut, enable] = useTurnOn()
 	useEffect(() => {
@@ -143,31 +129,12 @@ export function usePrevRef<T>(value: T) {
 	return prevRef
 }
 
-
 // todo: need to check if deps really changed
 export function useDefaultState<T>(defaultState: T) {
 	const [state, setState] = useState(defaultState)
-	useEffect(() => {
-		setState(() => defaultState)
-	}, [defaultState])
+	useEffect(() => void setState(() => defaultState), [defaultState])
 	return [state, setState] as const
 }
-
-// export const useAtomicExecute = () => {
-// 	const isRunningRef = useRef(false)
-// 	const [isRunning, setIsRunning] = useState(false)
-// 	return [isRunning, useCallback(async <T>(func: () => Promisable<T>) => {
-// 		if (isRunningRef.current) return
-// 		isRunningRef.current = true
-// 		setIsRunning(true)
-// 		try {
-// 			return await func()
-// 		} finally {
-// 			isRunningRef.current = false
-// 			setIsRunning(false)
-// 		}
-// 	}, [])] as const
-// }
 
 export function useEffectWithPrevDeps<T extends readonly unknown[]>(
 	effect: (prevDeps: OptionalArray<T>) => (void | (() => void | undefined)),
@@ -201,37 +168,6 @@ export function useLayoutEffectWithPrevDeps<T extends readonly unknown[]>(
 	)
 }
 
-export function useEffectOnce<T extends readonly unknown[]>(
-	effect: () => (void | (() => void | undefined)),
-	deps: T
-) {
-	const firedRef = useRef(false)
-	useEffect(
-		() => {
-			if (!firedRef.current) {
-				firedRef.current = true
-				return effect()
-			}
-		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		deps
-	)
-}
-
-export function useEnhancedState<S>(initialState?: S | (() => S)): [S, Dispatch<SetStateAction<S>>, RefObject<S>]
-export function useEnhancedState<S = undefined>(): [
-		S | undefined,
-	Dispatch<SetStateAction<S | undefined>>,
-	RefObject<S | undefined>
-]
-
-export function useEnhancedState<S>(initialState?: S | (() => S)) {
-	const [state, setState] = useState(initialState)
-	const stateRef = useRef(state)
-	stateRef.current = state
-	return [state, setState, stateRef]
-}
-
 export function useRefState<T>(initialValue: T): [T, Dispatch<SetStateAction<T>>, RefObject<T>]
 export function useRefState<T = undefined>(): [
 		T | undefined,
@@ -239,7 +175,6 @@ export function useRefState<T = undefined>(): [
 	RefObject<T | undefined>
 ]
 
-// a similar implementation is replicated in popup/hooks.tsx's PromptBody
 export function useRefState<T>(initialValue?: T) {
 	const [state, _setState] = useState(initialValue)
 	const lastStateRef = useRef(initialValue)
@@ -255,9 +190,6 @@ export function useRefState<T>(initialValue?: T) {
 	return [state, setState, lastStateRef]
 }
 
-// never create a hook like useAtomic, atomic(promise).
-
-// the purpose of atomic maker is to prevent racing, but the atomic(promise) wil always trigger the promise.
 export function useAtomicMaker(): [
 	boolean,
 	<T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | undefined>)
@@ -274,13 +206,6 @@ export function useAtomicMaker(): [
 	}, [setLoading, lastLoadingRef])]
 }
 
-export function useAtomicCallback<T, V extends Promise<any>>(
-	cb: (...params: T[]) => V
-): [boolean, (...params: T[]) => Promise<V | undefined>] {
-	const [loading, makeAtomic] = useAtomicMaker()
-	return [loading, useCallback((...params) => makeAtomic(cb)(...params), [makeAtomic, cb])]
-}
-
 // similar to useEffectEvent
 // https://react.dev/learn/separating-events-from-effects
 export function useRefValue<T>(value: T) {
@@ -288,72 +213,6 @@ export function useRefValue<T>(value: T) {
 	ref.current = value
 	return ref
 }
-
-// falsy to disable
-// 	- `useConfirmDiscard(msg)`: show confirm dialog when user tries to reload the page. `msg` is the message to show. If `msg` is falsy, the confirm dialog is disabled.
-// export const useConfirmDiscard = (msg?: string) => {
-// 	useEffect(() => {
-// 		if (msg) return addEvtListener(
-// 			window,
-// 			'beforeunload',
-// 			e => {
-// 				e.preventDefault()
-// 				// @ts-ignore
-// 				e.returnValue = msg
-// 			},
-// 			{capture: true}
-// 		)
-// 	}, [msg])
-// }
-//
-// 	- `[width, height] = useWindowSize()`: get window size, listen to `resize` event of `window`. In SSR, `width` and `height` are `undefined`. Note: be careful when handling hydration mismatch.
-// export const useWindowSize = () => {
-// 	const [size, setSize] = useState({
-// 		width: typeof window === 'object' ? window.innerWidth : undefined,
-// 		height: typeof window === 'object' ? window.innerHeight : undefined
-// 	})
-// 	useEffect(() => addEvtListener(
-// 		window,
-// 		'resize',
-// 		() => requestAnimationFrame(() => setSize({
-// 			width: window.innerWidth,
-// 			height: window.innerHeight,
-// 		}))), [])
-// 	return size
-// }
-
-export function usePropState<S>(initialState: S | (() => S)): {
-	value: S
-	setValue: Dispatch<SetStateAction<S>>
-}
-export function usePropState<S = undefined>(): {
-	value: S | undefined
-	setValue: Dispatch<SetStateAction<S | undefined>>
-}
-export function usePropState<S>(initialState?: S) {
-	const [value, setValue] = useState(initialState)
-	return {value, setValue}
-}
-
-// export const useId1 = () => {
-// 	const idContext = useContext(IdContext)
-// 	return useMemo(() => {
-// 		// in development, StrictMode causes the component rendered twice in browser, but once in server.
-// 		if (process.env.NODE_ENV === NodeEnv.development && !isBrowser && !disableStrictModeInDev) idContext.current++
-// 		return `id-${idContext.current++}`
-// 	}, [idContext])
-// }
-
-// native useId is not that simple to be used in SSR.
-// it requires the consistent virtual DOM tree.
-// https://github.com/facebook/react/pull/22644
-
-// https://github.com/vercel/next.js/pull/31102/files
-export function useScopeId(prefix?: string) {
-	const id = useId()
-	return useCallback((name?: string) => `${prefix ?? ''}${id}${name ?? ''}`, [id, prefix])
-}
-
 
 // https://github.com/facebook/react/issues/16295
 export function useUpdate<T>(getValue: (current?: T) => T) {
@@ -366,68 +225,6 @@ export function useKeep<T>(value: T): T {
 	const ref = useRef(value)
 	if (value !== undefined) ref.current = value
 	return value ?? ref.current
-}
-
-export function useListData<T>(
-	{
-		load,
-		initial = {
-			list: [],
-			hasNext: true,
-			hasPrev: true,
-		},
-	}: {
-		initial?: {
-			list: T[]
-			hasNext: boolean
-			hasPrev: boolean
-		}
-		load(params: {
-			before?: T
-			after?: T
-		}): Promise<{
-			records: T[]
-			hasMore: boolean
-		}>
-	}
-) {
-	const [state, setState] = useState(initial)
-	const loadNextRef = useRef(false)
-	const loadPrevRef = useRef(false)
-	return {
-		...state,
-		setState,
-		async loadNext() {
-			if (loadNextRef.current) return
-			try {
-				loadNextRef.current = true
-				const res = await load({after: state.list.at(-1)})
-				setState(({list, ...st}) => ({
-					...st,
-					list: [...list, ...res.records],
-					hasNext: res.hasMore,
-				}))
-				return res
-			} finally {
-				loadNextRef.current = false
-			}
-		},
-		async loadPrev() {
-			if (loadPrevRef.current) return
-			try {
-				loadPrevRef.current = true
-				const res = await load({before: state.list[0]})
-				setState(({list, ...st}) => ({
-					...st,
-					list: [...res.records, ...list],
-					hasPrev: res.hasMore,
-				}))
-				return res
-			} finally {
-				loadPrevRef.current = false
-			}
-		},
-	}
 }
 
 export function useAtom<T>(atom: Atom<T>) {
