@@ -267,6 +267,7 @@ useEffectWithPrevDeps(
 - `memoValue = useDeepMemo(value)`: get a memoized value. `value` is compared by `deep-equal` package.
 - `lastDefinedValue = useKeep(value)`: keep the last defined value. When `value` is `undefined`, the last non-`undefined` value is returned.
 - `ref = useRefValue(value)`: similar to [`useEffectEvent`](https://react.dev/learn/separating-events-from-effects), get a ref whose value is always the latest `value`.
+- `timedOut = useTimedOut(timeout)`: get a boolean whose value is `true` after `timeout` ms.
 - `state = useDebounce(value, timeout)`: get a debounced value. `state` is updated after at least `timeout` ms.
 - `[state, setState, stateRef] = useRefState(initialState)`: similar to `useState`. `stateRef`'s value is set immediately and synchronously after `setState` is called. Note: `initialState` can not be a function.
 - `update = useForceUpdate()`: get a function to force re-render component.

@@ -190,22 +190,6 @@ export function useRefState<T>(initialValue?: T) {
 	return [state, setState, lastStateRef]
 }
 
-export function useAtomicMaker(): [
-	boolean,
-	<T, V>(cb: (...params: T[]) => V) => ((...params: T[]) => Promise<V | undefined>)
-] {
-	const [loading, setLoading, lastLoadingRef] = useRefState(false)
-	return [loading, useCallback(<T, V>(func: (...params: T[]) => V) => async (...params: T[]) => {
-		if (lastLoadingRef.current) return
-		setLoading(true)
-		try {
-			return await func(...params)
-		} finally {
-			setLoading(false)
-		}
-	}, [setLoading, lastLoadingRef])]
-}
-
 // similar to useEffectEvent
 // https://react.dev/learn/separating-events-from-effects
 export function useRefValue<T>(value: T) {
