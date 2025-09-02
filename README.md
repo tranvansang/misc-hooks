@@ -14,11 +14,10 @@ npm i misc-hooks
 ## Features
 
 - **State Management**: Simple atomic state with `makeAtom()` and `useAtom()`
-- **Async Operations**: Enhanced async handling with `useAsync()` and `useAsyncEffect()`
-- **Atomic Actions**: Prevent concurrent executions with `useAtomicCallback()` and `useAtomicMaker()`
+- **Resource Management**: Resource management with `makeDisposer()`.
+- **Async Data Loading**: Enhanced async handling with `useLoad()`. Server-side rendering compatibility with `getInitial` pattern.
 - **Utility Hooks**: Common patterns like `useDebounce()`, `useDeepMemo()`, `useKeep()`, and more
 - **TypeScript**: Full TypeScript support with exported types
-- **SSR Support**: Server-side rendering compatibility with `getInitial` pattern
 - **Zero Config**: No providers or wrappers needed
 
 ## API Reference
@@ -27,7 +26,7 @@ npm i misc-hooks
 
 Simple reactive state management without providers.
 
-### Sample Usage
+#### Sample Usage
 
 ```typescript
 // create atom
@@ -58,13 +57,13 @@ const unsub4 = atom.sub((newVal, oldVal) => console.log(newVal, oldVal), {now: t
 // subscribe with conditional updates
 const unsub5 = atom.sub(
   (newVal, oldVal) => console.log(newVal),
-  {skip: (newVal, oldVal) => newVal === oldVal} // skip if values are the same
+  {skip(newVal, oldVal) {return newVal === oldVal}} // skip if values are the same
 )
 
 unsub() // unsubscribe
 ```
 
-### API
+#### API
 
 - `makeAtom(initialValue?: T)`: create an atom with an initial value.
 - `useAtom(atom: Atom<T>): T`: use an atom in a React component.
@@ -72,126 +71,95 @@ unsub() // unsubscribe
 - `atom.sub(subscriber, options?)`: subscribe to value changes. The subscriber receives `(newValue, oldValue)` and can return a cleanup function.
   - `options.now`: if `true`, the subscriber is called immediately with the current value as newValue and `undefined` as oldValue
   - `options.skip`: a function that receives `(newValue, oldValue)` and returns `true` to skip the subscriber call
-- `combineAtoms(atoms)`: combine multiple atoms into a single atom containing an array of values.
 
-### Combining Atoms
+### 2. Resource Management: `makeDisposer()`
 
-```typescript
-const countAtom = makeAtom(0)
-const nameAtom = makeAtom('John')
-const ageAtom = makeAtom(25)
+#### API
 
-// Combine multiple atoms
-const combinedAtom = combineAtoms([countAtom, nameAtom, ageAtom])
+`makeDisposer(): Disposer`: returns an `Disposer` object.
 
-// Use in component
-const [count, name, age] = useAtom(combinedAtom)
+`Disposer` object has the following properties:
+- `dispose()`: dispose the resources by: aborting the signal, calling all disposer functions added by `addDispose()`.
+- `signal`: an `AbortSignal` object that is aborted when `Disposer.dispose()` method is called.
+- `addDispose(fn?: () => void)`:
+  - if `fn` is falsy, do nothing.
+  - Otherwise, if `Disposer.dispose()` is called before, synchronously call `fn`.
+  - Otherwise, add `fn` to the list of functions to be called when `Disposer.dispose()` is called.
 
-// When any source atom changes, combined atom updates automatically
-countAtom.value = 1 // combinedAtom.value becomes [1, 'John', 25]
-```
-
-### 2. Async Effects: `useAsyncEffect()` and `makeDisposer()`
-
-Handle async operations in effects with proper cleanup.
-
-### Sample Usage
-
-```typescript
-useAsyncEffect(async ({signal, addDispose}) => {
-  const loader = makeLoader()
-  
-  signal.addEventListener('abort', () => loader.abort())
-  const value = await loader.loadData(params)
-  
-  window.addEventListener('resize', value.update)
-  
-  return () => {
-    window.removeEventListener('resize', value.update)
-    value.dispose()
-  }
-}, [params])
-```
-
-### API
-
-`useAsyncEffect(effectFn)` is a hook that is similar to `useEffect()`, but it can return a cleanup function asynchronously.
-
-The effect function `effectFn` is called with an object `{signal, addDispose}`.
-- `signal`: an `AbortSignal` object that is aborted when the component is unmounted or the effect is re-run.
-- `addDispose(dispose?: () => void)`: add a function to be called when the component is unmounted or the effect is re-run.
-  If the component is unmounted or the effect is reloaded before, `dispose` is immediately and synchronously called.
-`addDispose()` returns a function to remove the added function.
-
-`makeDisposer()`: is a utility function that returns an object with the following properties:
-- `addDispose(fn: () => void)`: add a function to be called when the `dispose()` method is called.
-If `dispose()` method is called before, `fn` is immediately and synchronously called.
-`addDispose()` returns a function to remove the added function.
-
-- `signal`: an `AbortSignal` object that is aborted when the `dispose()` method is called.
-- `dispose()`: abort the signal and call all functions added by `addDispose()`.
-
-### 3. Data Loading: `useAsync()`
+#### 3. Async Function Handling and Loading: `useLoad()`
 
 Powerful async data loading with error handling, loading states, and SSR support.
 
-### Sample Usage
+#### Sample Usage
 
 ```typescript
 // Basic usage
-const {data, error, reload, loading} = useAsync(async () => await fetchData())
+const {data, error, loading, load} = useLoad()
+// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => void load(async ({signal}) => await fetchData(signal))(), [])
 
 // With parameters
-const {data, error, reload, loading} = useAsync(async ({params}) => await fetchData(...params))
-useEffect(() => {reload(id, filter).catch(() => {})}, [id, filter, reload]) // pass params to reload
+const {data, error, loading, load} = useLoad()
+// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => void load(async ({signal}) => await fetchData(params, {signal}))(), [params])
 
 if (error) throw error // propagate error to ErrorBoundary
 ```
 
-### API
+#### API
 
-Signature: `const {error, data, reload, loading} = useAsync<T, Params extends any[]>(asyncFn, getInitial)`.
+`useLoad<T>(getInitial?: () => T): LoadState`: returns a `LoadState` object.
 
-- (required)`asyncFn: (disposer) => Promise<T> | T` is a function that returns the data or a promise resolving the data.
+`LoadState` object has the following properties:
+- `data`: the latest data, or `undefined` if data is loading or error.
+- `error`: the error, or `undefined` if data is loading or no error.
+- `loading`: a boolean that is `true` when the data is loading.
+- `load`: the `load()` function has 2 interfaces to support both async and synchronous functions.
+	- `load(fn: (disposer: PartialDisposer, ...params: Params) => T): (...params: Params) => T`
+	- `load(fn: (disposer: PartialDisposer, ...params: Params) => Promise<T>): (...params: Params) => Promise<T>`
+  
+`load` takes a function `fn` and returns a wrapper function.
+`load` never changes and can be safely placed in the second argument of `useEffect`.
+The returned wrapper function, when be called, will call `fn` and handle the `LoadState` object.
 
-- (optional) `getInitial?: () => T | undefined`: a function that optionally returns initial data.
+`fn` receives a `PartialDisposer` object and returns a value or a promise resolving the value, which will be placed in `data` key of the `LoadState` object, or, `error` key if an error occurs.
+While the execution of `fn` is in progress, `loading` is `true`, and both `data` and `error` are `undefined`.
+When `fn` is finished, `loading` is `false`.
+
+Besides the `PartialDisposer` object, `fn` also receives the parameters passed to the function returned by `load()`.`
+
+`PartialDisposer` object has the following properties:
+- `signal`: an `AbortSignal` object that is aborted when the component is unmounted or another `load()()` is called.
+- `addDispose(fn?: () => void)`: add a function to be called when the component is unmounted or the next `load()()` is called.
+	Similar to `makeDisposer()` API, if the component is unmounted or the next `load()()` is called before, `fn` is immediately and synchronously called.
+
+- (optional) `getInitial?: () => T | undefined`: a function that optionally and synchronously returns initial data.
 
 `getInitial` if provided, is called in the server render, and in the first client render.
-If it throws an error, the error is caught and set to `error`.
+If it throws an error, the error is caught, without propagating to the ErrorBoundary, and set to `error` in `LoadState`.
 
-- `disposer`: an object with the following properties:
-  - `addDispose(dispose: () => void)`: add a function to be called when the component is unmounted or the data is reloaded.
-If the component is unmounted or the data is reloaded before, `dispose` is immediately and synchronously called.
-`addDispose()` returns a function to remove the added function.
+#### Practical Usage
 
-  - `signal`: an `AbortSignal` object that is aborted when the component is unmounted or the data is reloaded.
-  
-  - `params`: an array of parameters passed to `reload()`.
+##### Practical case 1:
+When `load(fn)()` is called, `error` and `data` are set to `undefined` before `fn` is called.
+If the last data needs to be kept while reloading, for example, when changing a page number, you want to show the current data until the next page is loaded,
+use `useKeep` hook.
 
-- `loading`: a boolean that is `true` when the data is loading.
-- `reload`: a function that reloads the data and returns the result of the `asyncFn`. Can accept parameters that are passed to the async function.
-  **`reload` value never changes**, it can be safely used in the second argument of `useEffect`.
-  In subsequent renders, `reload` uses the latest function `asyncFn` passed to the hook.
+##### Practical case 2:
+If you want to delay showing the loading indicator, use `useTimedOut` hook.
 
-### Practical Usage
+##### Practical case 3:
+If params is an object, and you want to reload the data when the object changes, use `useDeepMemo` hook.
 
-Practice 1:
-When `reload()` is called, `error` and `data` are set to `undefined` (via `setState`) before `asyncFn` is called.
-There is a case that the last data needs to be kept while reloading, for example, when changing a page number, you want to show the current data until the next page is loaded,
-Use `useKeep` hook.
+Sample usage for practical case 1, 2, 3:
 
-Practice 2: If you want to delay showing the loading indicator, use `useTimedOut` hook.
-
-Practice 3: If params is an object, and you want to reload the data when the object changes, use `useDeepMemo` hook.
-
-Sample usage:
 ```tsx
 const memoParams = useDeepMemo(params)
-const {data, error, reload, loading} = useAsync(({params}) => loadData(...params))
-useEffect(() => {reload(memoParams).catch(() => {})}, [memoParams, reload]) // load data when params deeply changes
+const {data, error, loading, load} = useLoad()
+useEffect(() => void load(memoParams)(), [memoParams, load]) // load data when params deeply changes
 const timedOut = useTimedOut(500)
 const dataKeep = useKeep(data)
-if (error) throw error
+if (error) throw error // propagate error to ErrorBoundary
 return dataKeep // has data
   ? <Data data={dataKeep}/>
   : timedOut // loading
@@ -199,9 +167,47 @@ return dataKeep // has data
     : null // show empty when loading is too fast
 ```
 
-### SSR Guide:
+##### Practical case 4:
+Handle async operations in effects with proper cleanup.
 
-`useAsync()` can be used in SSR by providing `getInitial` function.
+Sample usage:
+
+```typescript
+const {load} = useLoad()
+useEffect(() => {
+	void load(
+		async ({signal, addDispose}) => {
+			const loader = makeLoader()
+
+			signal.addEventListener('abort', () => loader.abort())
+			const value = await loader.loadData(params)
+			addDispose(() => loader.dispose())
+
+			if (signal.aborted) return
+
+			window.addEventListener('resize', value.update)
+			addDispose(() => window.removeEventListener('resize', value.update))
+		})()
+}, [load, params])
+```
+
+##### Practical case 5: Atomic actions.
+
+Prevent concurrent executions of async operations and show a loading indicator.
+
+Sample usage:
+
+```tsx
+const {loading, load} = useLoad()
+return <>
+  <button onClick={load(onSave)} disabled={loading}>Save</button>
+  <button onClick={load(onDelete)} disabled={loading}>Delete</button>
+</>
+```
+
+#### SSR Guide:
+
+`useLoad()` can be used in SSR by providing `getInitial` function.
 
 `getInitial` is called in only in the server render, and in the first client render.
 
@@ -209,9 +215,9 @@ return dataKeep // has data
   - If data is available, return the data synchronously.
   - If data is not available:
     - Return `undefined` synchronously
-    - Trigger data loading, retain the promise for later use.
-    - Mark the render not ready to return to the client.
-    - Wait for all data loaded.
+    - Trigger data loading, store loaded data in the store. Retain the promise of this action for later use.
+    - Mark the render not ready and prevent it from starting the response.
+    - Wait for all data loaded by awaiting the retained promises.
     - Re-render the component with the loaded data.
 
 - In client side:
@@ -226,68 +232,33 @@ return dataKeep // has data
 
 Load only once: use `useRef()` to check if the data is already loaded.
 ```javascript
-const {data, reload} = useAsync(fetchData, () => getSSRData(deepParams))
-const dataRef = useRef(data) // use useRef() to avoid re-render
-dataRef.current = data
-useEffect(() => void (!dataRef.current && reload().catch(() => {})) , [reload]) // reload never changes and is safe to place in the second argument
+const {data, load} = useLoad(() => getSSRData(deepParams))
+const dataRef = useRef(data)
+useEffect(() => void (!dataRef.current && load(({signal}) => fetchData({signal}))()) , [load]) // load never changes and is safe to place in the second argument
+// if initial data is not available, load data
 ```
 
 Re-load when params changes, client-rendering version without SSR support:
 ```javascript
 const deepParams = useDeepMemo(params)
-const {data, reload} = useAsync(async ({params}) => await fetchData(...params), () => getSSRData(params))
-useEffect(() => void(reload(deepParams)), [deepParams, reload])
+const {data, load} = useLoad(() => getSSRData(deepParams))
+useEffect(() => void(load(({signal}) => fetchData(deepParams, {signal}))), [deepParams, load])
+// load data when params deeply changes AND in the first render
 ```
 
-Combine the two to support SSR, only load if data is empty and re-load when params changes: use `useEffectWithPrevDeps()`:
+Combine the two above samples to support SSR, only load if data is empty and re-load when params changes: use `useEffectWithPrevDeps()`:
 ```javascript
 const deepParams = useDeepMemo(params)
-const {data, reload} = useAsync(async ({params}) => await fetchData(...params), () => getSSRData(params))
-const dataRef = useRef(data) // or useRefValue(data) or useEffectEvent(data)
-dataRef.current = data
+const {data, load} = useLoad(() => getSSRData(deepParams))
+const dataRef = useRef(data)
 useEffectWithPrevDeps(
-  ([prevParams, prevReload]) => void ((prevReload || !dataRef.current) && reload(deepParams).catch(() => {})),
-  [deepParams, reload]
+  ([prevReload, prevParams]) => void ((prevReload || !dataRef.current) && load(({signal}) => fetchData(deepParams, {signal}))),
+	// prevReload is only falsy in the first render.
+	// in the first render, if initial data is empty, load.
+	// from the second render, if this effect is called, i.e., if params deeply changed, load.
+  [load, deepParams]
 )
 ```
-
-### 4. Atomic Actions: `useAtomicMaker()`
-
-Prevent concurrent executions of async operations.
-
-### Sample Usage
-
-Sample `useAtomicMaker`:
-```tsx
-const [loading, makeAtomic] = useAtomicMaker()
-return <>
-  <button onClick={makeAtomic(onSave)} disabled={loading}>Save</button>
-  <button onClick={makeAtomic(onDelete)} disabled={loading}>Delete</button>
-</>
-```
-
-Sample `useAtomicMaker`:
-```tsx
-const [loading, makeAtomic] = useAtomicMaker()
-return <>
-  <button onClick={onSave} disabled={loading}>Save</button>
-  <button onClick={onDelete} disabled={loading}>Delete</button>
-</>
-async function onSave() {
-  await makeAtomic(async () => await saveData(data))
-}
-async function onDelete() {
-  await makeAtomic(async () => await deleteData(data))
-}
-```
-
-### API
-
-`[loading, makeAtomic] = useAtomicMaker()`: the hook to create an atomic maker, used to combine multiple functions into atomic functions.
-
-`useAtomicMaker()` takes no argument and returns an array `[loading, makeAtomic]`:
-- `loading`: a boolean that is `true` when the atomic function is running.
-- `makeAtomic(cb)`: a function to make the argument function `cb` atomic.
 
 ### 5. Utility Hooks
 

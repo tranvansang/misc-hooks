@@ -233,7 +233,7 @@ export function useAtom<T>(atom: Atom<T>) {
 	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
 }
 
-type AsyncState<T> = {
+type LoadState<T> = {
 	data: T
 	error?: undefined
 	loading: false
@@ -247,15 +247,22 @@ type AsyncState<T> = {
 	loading: boolean
 }
 
-export function useAsync<T, Params extends any[]>(
-	asyncFn: (disposer: {
+export function useLoad<T, Params extends any[]>(getInitial?: () => T | undefined): LoadState<T> & {
+	load(cb: (disposer: {
 		signal: Disposer['signal']
 		addDispose: Disposer['addDispose']
-		params: Params
-	}) => Promise<T> | T,
+	}, ...params: Params) => T): (...params: Params) => T
+}
+export function useLoad<T, Params extends any[]>(getInitial?: () => T | undefined): LoadState<T> & {
+	load(cb: (disposer: {
+		signal: Disposer['signal']
+		addDispose: Disposer['addDispose']
+	}, ...params: Params) => Promise<T>): (...params: Params) => Promise<T>
+}
+export function useLoad<T, Params extends any[]>(
 	getInitial?: () => T | undefined // may throw an error
-): AsyncState<T> & { reload(this: void, ...params: Params): Promise<T> } {
-	const [state, setState] = useState<AsyncState<T>>(() => {
+) {
+	const [state, setState] = useState<LoadState<T>>(() => {
 		if (!getInitial) return {loading: false} as const
 		try {
 			return {data: getInitial() as T, loading: false} as const
@@ -264,50 +271,38 @@ export function useAsync<T, Params extends any[]>(
 		}
 	})
 
-	const disposerRef = useRef<Disposer>(undefined)
+	const disposerRef = useRef(makeDisposer())
 	useEffect(() => () => {
-			disposerRef.current?.dispose()
-			disposerRef.current = undefined
-		}, [])
+		disposerRef.current.dispose()
+		disposerRef.current = makeDisposer()
+	}, [])
 
-	const loadRef = useRefValue(load)
-	const reload = useCallback((...params: Params) => loadRef.current(...params), [loadRef])
+	return {...state, load: useCallback((fn: (disposer: {
+			signal: Disposer['signal']
+			addDispose: Disposer['addDispose']
+		}, ...params: Params) => T | Promise<T>) => (...params: Params) => {
+			if (disposerRef.current.signal.aborted) return fn({signal: disposerRef.current.signal, addDispose: disposerRef.current.addDispose}, ...params)
 
-	return {...state, reload}
-
-	async function load(...params: Params){
-		disposerRef.current?.dispose()
-		const disposer = makeDisposer()
-		disposerRef.current = disposer
-
-		setState({loading: true})
-		const promise = (async () => asyncFn({
-			signal: disposer.signal,
-			addDispose: disposer.addDispose,
-			params,
-		}))() // Promise.try proposal
-		try {
-			const data = await promise
-			if (!disposer.signal.aborted) setState({data, loading: false}) // https://github.com/reactwg/react-18/discussions/82
-		} catch (error) {
-			if (!disposer.signal.aborted) setState({error, loading: false})
-		}
-		return promise
-	}
-}
-
-export function useAsyncEffect(
-	asyncFn: (disposer: Omit<Disposer, 'dispose'>) => any,
-	deps: readonly any[]
-) {
-	useEffect(() => {
-		const disposer = makeDisposer()
-		;(async () => {
-			disposer.addDispose(await asyncFn({
-				signal: disposer.signal,
-				addDispose: disposer.addDispose,
-			}))
-		})()
-		return disposer.dispose
-	}, deps)
+			disposerRef.current.dispose()
+			const disposer = disposerRef.current = makeDisposer()
+			setState({loading: true})
+			try {
+				const result = fn({signal: disposer.signal, addDispose: disposer.addDispose}, ...params)
+				if (typeof (result as any)?.then === 'function') return (async () => {
+					try {
+						const data = await result
+						if (!disposer.signal.aborted) setState({data, loading: false})
+						return data
+					} catch (error) {
+						if (!disposer.signal.aborted) setState({error, loading: false})
+						throw error
+					}
+				})()
+				if (!disposer.signal.aborted) setState({data: result as T, loading: false})
+				return result
+			} catch (error) {
+				if (!disposer.signal.aborted) setState({error, loading: false})
+				throw error
+			}
+		}, [])}
 }
