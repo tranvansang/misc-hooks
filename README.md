@@ -152,7 +152,7 @@ Sample usage for practical case 1, 2, 3:
 ```tsx
 const memoParams = useDeepMemo(params)
 const {data, error, loading, load} = useLoad()
-useEffect(() => void load(memoParams)(), [memoParams, load]) // load data when params deeply changes
+useEffect(() => void load(({signal}) => fetchData(memoParams, {signal}))(), [memoParams, load]) // load data when params deeply changes
 const timedOut = useTimedOut(500)
 const dataKeep = useKeep(data)
 if (error) throw error // propagate error to ErrorBoundary
