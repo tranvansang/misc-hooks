@@ -20,13 +20,11 @@ npm i misc-hooks
 - **TypeScript**: Full TypeScript support with exported types
 - **Zero Config**: No providers or wrappers needed
 
-## API Reference
-
-### 1. State Management: `makeAtom()` and `useAtom()`
+## 1. State Management: `makeAtom()` and `useAtom()`
 
 Simple reactive state management without providers.
 
-#### Sample Usage
+### Sample Usage
 
 ```typescript
 // create atom
@@ -63,7 +61,7 @@ const unsub5 = atom.sub(
 unsub() // unsubscribe
 ```
 
-#### API
+### API
 
 - `makeAtom(initialValue?: T)`: create an atom with an initial value.
 - `useAtom(atom: Atom<T>): T`: use an atom in a React component.
@@ -72,9 +70,9 @@ unsub() // unsubscribe
   - `options.now`: if `true`, the subscriber is called immediately with the current value as newValue and `undefined` as oldValue
   - `options.skip`: a function that receives `(newValue, oldValue)` and returns `true` to skip the subscriber call
 
-### 2. Resource Management: `makeDisposer()`
+## 2. Resource Management: `makeDisposer()`
 
-#### API
+### API
 
 `makeDisposer(): Disposer`: returns an `Disposer` object.
 
@@ -86,27 +84,25 @@ unsub() // unsubscribe
   - Otherwise, if `Disposer.dispose()` is called before, synchronously call `fn`.
   - Otherwise, add `fn` to the list of functions to be called when `Disposer.dispose()` is called.
 
-#### 3. Async Function Handling and Loading: `useLoad()`
+## 3. Async Function Handling and Loading: `useLoad()`
 
 Powerful async data loading with error handling, loading states, and SSR support.
 
-#### Sample Usage
+### Sample Usage
 
 ```typescript
 // Basic usage
 const {data, error, loading, load} = useLoad()
-// eslint-disable-next-line react-hooks/exhaustive-deps
-useEffect(() => void load(async ({signal}) => await fetchData(signal))(), [])
+useEffect(() => void load(async ({signal}) => await fetchData(signal))(), [load])
 
 // With parameters
 const {data, error, loading, load} = useLoad()
-// eslint-disable-next-line react-hooks/exhaustive-deps
-useEffect(() => void load(async ({signal}) => await fetchData(params, {signal}))(), [params])
+useEffect(() => void load(async ({signal}) => await fetchData(params, {signal}))(), [load, params])
 
 if (error) throw error // propagate error to ErrorBoundary
 ```
 
-#### API
+### API
 
 `useLoad<T>(getInitial?: () => T): LoadState`: returns a `LoadState` object.
 
@@ -138,17 +134,17 @@ Besides the `PartialDisposer` object, `fn` also receives the parameters passed t
 `getInitial` if provided, is called in the server render, and in the first client render.
 If it throws an error, the error is caught, without propagating to the ErrorBoundary, and set to `error` in `LoadState`.
 
-#### Practical Usage
+### Practical Usage
 
-##### Practical case 1:
+#### Practical case 1:
 When `load(fn)()` is called, `error` and `data` are set to `undefined` before `fn` is called.
 If the last data needs to be kept while reloading, for example, when changing a page number, you want to show the current data until the next page is loaded,
 use `useKeep` hook.
 
-##### Practical case 2:
+#### Practical case 2:
 If you want to delay showing the loading indicator, use `useTimedOut` hook.
 
-##### Practical case 3:
+#### Practical case 3:
 If params is an object, and you want to reload the data when the object changes, use `useDeepMemo` hook.
 
 Sample usage for practical case 1, 2, 3:
@@ -167,7 +163,7 @@ return dataKeep // has data
     : null // show empty when loading is too fast
 ```
 
-##### Practical case 4:
+#### Practical case 4:
 Handle async operations in effects with proper cleanup.
 
 Sample usage:
@@ -191,7 +187,7 @@ useEffect(() => {
 }, [load, params])
 ```
 
-##### Practical case 5: Atomic actions.
+#### Practical case 5: Atomic actions.
 
 Prevent concurrent executions of async operations and show a loading indicator.
 
@@ -205,7 +201,7 @@ return <>
 </>
 ```
 
-#### SSR Guide:
+### SSR Guide:
 
 `useLoad()` can be used in SSR by providing `getInitial` function.
 
@@ -260,9 +256,9 @@ useEffectWithPrevDeps(
 )
 ```
 
-### 5. Utility Hooks
+## 5. Utility Hooks
 
-#### Frequently Used
+### Frequently Used
 - `useEffectWithPrevDeps((prevDeps) => {}, [...deps])`: similar to `useEffect`, but provides previous deps to the effect function.
 - `memoValue = useDeepMemo(value)`: get a memoized value. `value` is compared by `deep-equal` package.
 - `lastDefinedValue = useKeep(value)`: keep the last defined value. When `value` is `undefined`, the last non-`undefined` value is returned.
@@ -272,7 +268,7 @@ useEffectWithPrevDeps(
 - `[state, setState, stateRef] = useRefState(initialState)`: similar to `useState`. `stateRef`'s value is set immediately and synchronously after `setState` is called. Note: `initialState` can not be a function.
 - `update = useForceUpdate()`: get a function to force re-render component.
 
-#### Additional Utilities
+### Additional Utilities
 - `[state, setState] = useDefaultState(defaultState)`: when `defaultState` changes, set `state` to `defaultState`.
 - `[state, update] = useUpdate(getValue)`: get a function to force re-render component. `getValue` is a function to get the latest value to compare with the previous value. The latest `getValue` is always used (`useReducer` specs).
 - `nextState = nextStateFromAction(action, state)`: get next state from `setState` action.
