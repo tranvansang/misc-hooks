@@ -246,6 +246,7 @@ export function useLoad<T, Params extends any[]>(getInitial?: () => T | undefine
 export function useLoad<T, Params extends any[]>(
 	getInitial?: () => T | undefined // may throw an error
 ) {
+	const loadingRef = useRef<Promise<T>>(undefined)
 	const [state, setState] = useState<LoadState<T>>(() => {
 		if (!getInitial) return {loading: false} as const
 		try {
@@ -261,7 +262,7 @@ export function useLoad<T, Params extends any[]>(
 		disposerRef.current = makeDisposer()
 	}, [])
 
-	return {...state, load: useCallback((fn: (disposer: {
+	return {...state, loadingRef, load: useCallback((fn: (disposer: {
 			signal: Disposer['signal']
 			addDispose: Disposer['addDispose']
 		}, ...params: Params) => T | Promise<T>) => (...params: Params) => {
@@ -272,7 +273,7 @@ export function useLoad<T, Params extends any[]>(
 			setState({loading: true})
 			try {
 				const result = fn({signal: disposer.signal, addDispose: disposer.addDispose}, ...params)
-				if (typeof (result as any)?.then === 'function') return (async () => {
+				if (typeof (result as any)?.then === 'function') return loadingRef.current = (async () => {
 					try {
 						const data = await result
 						if (!disposer.signal.aborted) setState({data, loading: false})
@@ -280,9 +281,14 @@ export function useLoad<T, Params extends any[]>(
 					} catch (error) {
 						if (!disposer.signal.aborted) setState({error, loading: false})
 						throw error
+					} finally {
+						if (!disposer.signal.aborted) loadingRef.current = undefined
 					}
 				})()
-				if (!disposer.signal.aborted) setState({data: result as T, loading: false})
+				if (!disposer.signal.aborted) {
+					loadingRef.current = undefined
+					setState({data: result as T, loading: false})
+				}
 				return result
 			} catch (error) {
 				if (!disposer.signal.aborted) setState({error, loading: false})

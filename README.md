@@ -106,14 +106,22 @@ if (error) throw error // propagate error to ErrorBoundary
 
 `useLoad<T>(getInitial?: () => T): LoadState`: returns a `LoadState` object.
 
-`LoadState` object has the following properties:
+- (optional) `getInitial?: () => T | undefined`: a function that optionally and synchronously returns initial data.
+
+	`getInitial` if provided, is called in the server render, and in the first client render.
+	If it throws an error, the error is caught, without propagating to the ErrorBoundary, and set to `error` in `LoadState`.
+
+The returned `LoadState` object has the following properties:
 - `data`: the latest data, or `undefined` if data is loading or error.
 - `error`: the error, or `undefined` if data is loading or no error.
 - `loading`: a boolean that is `true` when the data is loading.
+- `loadingRef`: (advanced usage) a ref whose value is the promise of the latest ongoing `load(fn)()`.
 - `load`: the `load()` function has 2 interfaces to support both async and synchronous functions.
 	- `load(fn: (disposer: PartialDisposer, ...params: Params) => T): (...params: Params) => T`
 	- `load(fn: (disposer: PartialDisposer, ...params: Params) => Promise<T>): (...params: Params) => Promise<T>`
   
+#### `load()` function
+
 `load` takes a function `fn` and returns a wrapper function.
 `load` never changes and can be safely placed in the second argument of `useEffect`.
 The returned wrapper function, when be called, will call `fn` and handle the `LoadState` object.
@@ -127,12 +135,22 @@ Besides the `PartialDisposer` object, `fn` also receives the parameters passed t
 `PartialDisposer` object has the following properties:
 - `signal`: an `AbortSignal` object that is aborted when the component is unmounted or another `load()()` is called.
 - `addDispose(fn?: () => void)`: add a function to be called when the component is unmounted or the next `load()()` is called.
-	Similar to `makeDisposer()` API, if the component is unmounted or the next `load()()` is called before, `fn` is immediately and synchronously called.
+Similar to `makeDisposer()` API, if the component is unmounted or the next `load()()` is called before, `fn` is immediately and synchronously called.
 
-- (optional) `getInitial?: () => T | undefined`: a function that optionally and synchronously returns initial data.
+#### `loadingRef` value
 
-`getInitial` if provided, is called in the server render, and in the first client render.
-If it throws an error, the error is caught, without propagating to the ErrorBoundary, and set to `error` in `LoadState`.
+`loadingRef` is a ref whose value is the promise of the latest ongoing `load(fn)()` call.
+This is for advanced usage.
+Typically, you will not need it.
+
+`loadingRef` is a ref, its value never changes and can be safely placed in the second argument of `useEffect`.
+
+`loadingRef`'s value is set before the first `await` in `fn` and reset to `undefined` after the promise returned by `fn` is resolved.
+
+As a result 1, if `fn` is synchronous, `loadingRef` will be `undefined` all the time.
+
+As a result 2, if in `fn` body, you use `loadingRef.current` after any `await`, the value will be the promise of the current `fn()` call.
+If you `await` that promise, the promise will never resolve.
 
 ### Practical Usage
 
@@ -199,6 +217,32 @@ return <>
   <button onClick={load(onSave)} disabled={loading}>Save</button>
   <button onClick={load(onDelete)} disabled={loading}>Delete</button>
 </>
+```
+
+#### Practical case 6: Use the last call if it is still in progress.
+
+We want to achieve the following behavior:
+- First `loadData()` is called, and in progress.
+- Second `loadData()` is called, detect that the last call is still in progress, and use the last call.
+- Third `loadData()` is called, detect that the last call is still in progress, and use the last call.
+- First `loadData()` call finishes, assign the result to `data`.
+
+Sample usage:
+
+```tsx
+const {data, error, loading, load, loadingRef} = useLoad()
+useEffect(() => void load(() => {
+	// must use loadingRef.current before any await
+	if (loadingRef.current) return loadingRef.current
+	// do not use {signal} here, because it will be aborted when the next load()() is called
+	return fetchData()
+})(), [load, loadingRef]) // load and loadingRef never change
+```
+
+Or shorter version:
+```tsx
+const {data, error, loading, load, loadingRef} = useLoad()
+useEffect(() => void load(() => loadingRef.current ?? fetchData())(), [load, loadingRef])
 ```
 
 ### SSR Guide:
