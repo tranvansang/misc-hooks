@@ -1,7 +1,3 @@
-/**
- * @vitest-environment jsdom
- */
-
 import {describe, expect, test, vi} from 'vitest'
 import {makeDisposer} from '../index'
 

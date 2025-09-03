@@ -1,7 +1,3 @@
-/**
- * @vitest-environment jsdom
- */
-
 import {describe, expect, test, vi} from 'vitest'
 import {act, renderHook} from '@testing-library/react'
 import {Atom, makeAtom, useAtom, useRefState} from '../index'

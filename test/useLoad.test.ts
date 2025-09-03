@@ -1,7 +1,3 @@
-/**
- * @vitest-environment jsdom
- */
-
 import {describe, expect, test, vi} from 'vitest'
 import {act, renderHook, waitFor} from '@testing-library/react'
 import {useLoad} from '../index'
