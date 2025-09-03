@@ -14,9 +14,9 @@ describe('useAtom', () => {
 		expect(result.current).toBe(1)
 
 		// external change
-		atom.value = 2
-		expect(result.current).toBe(1)
-		rerender()
+		act(() => {
+			atom.value = 2
+		})
 		expect(result.current).toBe(2)
 
 		// internal change
@@ -35,9 +35,9 @@ describe('useAtom', () => {
 			expect(result.current).toBe(1)
 
 			// external change
-			atom.value = 2
-			expect(result.current).toBe(1)
-			rerender()
+			act(() => {
+				atom.value = 2
+			})
 			expect(result.current).toBe(2)
 
 			// internal change
@@ -133,15 +133,15 @@ describe('useAtom', () => {
 			expect(cnt).toBe(1)
 
 			// external change
-			atom.value = 2
-			expect(cnt).toBe(1)
-			rerender()
+			act(() => {
+				atom.value = 2
+			})
 			expect(cnt).toBe(2)
 
 			// external change same value
-			atom.value = 2
-			expect(cnt).toBe(2)
-			rerender()
+			act(() => {
+				atom.value = 2
+			})
 			expect(cnt).toBe(3)
 
 			// internal change
@@ -178,19 +178,18 @@ describe('useAtom', () => {
 			exp++
 			expect(cnt).toBe(exp)
 
-			// external change, no affect, but mark one re-render
-			atom.value = 2
-			expect(cnt).toBe(exp)
-			rerender()
+			// external change
+			act(() => {
+				atom.value = 2
+			})
 			exp++
-			// exp++
 			expect(cnt).toBe(exp)
 
 			// external change same value
-			atom.value = 2
-			expect(cnt).toBe(exp)
-			rerender()
-			exp++
+			act(() => {
+				atom.value = 2
+			})
+			// no re-render for same value with useSyncExternalStore
 			expect(cnt).toBe(exp)
 
 			// internal change

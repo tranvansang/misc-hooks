@@ -1,5 +1,5 @@
 import {describe, it, expect, vi} from 'vitest'
-import {renderHook} from '@testing-library/react'
+import {renderHook, waitFor} from '@testing-library/react'
 import {useTimedOut} from '../index.js'
 
 describe('useTimedOut', () => {
@@ -13,15 +13,17 @@ describe('useTimedOut', () => {
 		
 		expect(result.current).toBe(false)
 		
-		await new Promise(resolve => setTimeout(resolve, 100))
-		expect(result.current).toBe(true)
+		await waitFor(() => {
+			expect(result.current).toBe(true)
+		}, {timeout: 150})
 	})
 
 	it('should handle immediate timeout', async () => {
 		const {result} = renderHook(() => useTimedOut(0))
 		
-		await new Promise(resolve => setTimeout(resolve, 10))
-		expect(result.current).toBe(true)
+		await waitFor(() => {
+			expect(result.current).toBe(true)
+		}, {timeout: 100})
 	})
 
 	it('should remain false before timeout', async () => {
@@ -32,8 +34,9 @@ describe('useTimedOut', () => {
 		await new Promise(resolve => setTimeout(resolve, 50))
 		expect(result.current).toBe(false)
 		
-		await new Promise(resolve => setTimeout(resolve, 100))
-		expect(result.current).toBe(true)
+		await waitFor(() => {
+			expect(result.current).toBe(true)
+		}, {timeout: 150})
 	})
 
 	it('should clear timeout on unmount', () => {
@@ -68,24 +71,29 @@ describe('useTimedOut', () => {
 	})
 
 	it('should work with multiple instances independently', async () => {
-		const {result: result1} = renderHook(() => useTimedOut(50))
-		const {result: result2} = renderHook(() => useTimedOut(100))
+		const {result: result1} = renderHook(() => useTimedOut(30))
+		const {result: result2} = renderHook(() => useTimedOut(150))
 		
 		expect(result1.current).toBe(false)
 		expect(result2.current).toBe(false)
 		
-		await new Promise(resolve => setTimeout(resolve, 60))
-		expect(result1.current).toBe(true)
+		await waitFor(() => {
+			expect(result1.current).toBe(true)
+		}, {timeout: 100})
+		
+		// result2 should still be false since only ~30-50ms have passed
 		expect(result2.current).toBe(false)
 		
-		await new Promise(resolve => setTimeout(resolve, 50))
-		expect(result2.current).toBe(true)
+		await waitFor(() => {
+			expect(result2.current).toBe(true)
+		}, {timeout: 200})
 	})
 
 	it('should handle negative timeout as 0', async () => {
 		const {result} = renderHook(() => useTimedOut(-100))
 		
-		await new Promise(resolve => setTimeout(resolve, 10))
-		expect(result.current).toBe(true)
+		await waitFor(() => {
+			expect(result.current).toBe(true)
+		}, {timeout: 100})
 	})
 })

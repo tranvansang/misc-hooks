@@ -40,7 +40,7 @@ export function nextStateFromAction<T>(action: SetStateAction<T>, state: T): T {
 // return [state, toggle]
 export function useToggle(
 	init = false
-): [boolean, (state?: boolean) => void] {
+): [boolean, Dispatch<boolean | undefined>] {
 	return useReducer((state: boolean, action?: boolean) => action ?? !state, init)
 }
 

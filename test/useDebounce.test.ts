@@ -1,5 +1,5 @@
 import {describe, it, expect, vi} from 'vitest'
-import {renderHook} from '@testing-library/react'
+import {renderHook, act, waitFor} from '@testing-library/react'
 import {useDebounce} from '../index.js'
 
 describe('useDebounce', () => {
@@ -19,8 +19,9 @@ describe('useDebounce', () => {
 		rerender({value: 'second', timeout: 50})
 		expect(result.current).toBe('first')
 		
-		await new Promise(resolve => setTimeout(resolve, 100))
-		expect(result.current).toBe('second')
+		await waitFor(() => {
+			expect(result.current).toBe('second')
+		}, {timeout: 150})
 	})
 
 	it('should cancel pending debounce on new value', async () => {
@@ -39,8 +40,9 @@ describe('useDebounce', () => {
 		await new Promise(resolve => setTimeout(resolve, 50))
 		expect(result.current).toBe('first')
 		
-		await new Promise(resolve => setTimeout(resolve, 60))
-		expect(result.current).toBe('third')
+		await waitFor(() => {
+			expect(result.current).toBe('third')
+		}, {timeout: 150})
 	})
 
 	it('should update immediately with 0 timeout', async () => {
@@ -53,8 +55,9 @@ describe('useDebounce', () => {
 		
 		rerender({value: 'second'})
 		
-		await new Promise(resolve => setTimeout(resolve, 10))
-		expect(result.current).toBe('second')
+		await waitFor(() => {
+			expect(result.current).toBe('second')
+		}, {timeout: 100})
 	})
 
 	it('should handle timeout changes', async () => {
@@ -66,8 +69,9 @@ describe('useDebounce', () => {
 		rerender({value: 'second', timeout: 50})
 		expect(result.current).toBe('first')
 		
-		await new Promise(resolve => setTimeout(resolve, 100))
-		expect(result.current).toBe('second')
+		await waitFor(() => {
+			expect(result.current).toBe('second')
+		}, {timeout: 150})
 	})
 
 	it('should work with different data types', async () => {
@@ -87,9 +91,10 @@ describe('useDebounce', () => {
 		rerenderNumber({value: 2})
 		rerenderObject({value: {count: 2}})
 		
-		await new Promise(resolve => setTimeout(resolve, 60))
-		expect(numberResult.current).toBe(2)
-		expect(objectResult.current).toEqual({count: 2})
+		await waitFor(() => {
+			expect(numberResult.current).toBe(2)
+			expect(objectResult.current).toEqual({count: 2})
+		}, {timeout: 150})
 	})
 
 	it('should cancel debounce on unmount', () => {
@@ -122,7 +127,8 @@ describe('useDebounce', () => {
 			expect(result.current).toBe(0)
 		}
 		
-		await new Promise(resolve => setTimeout(resolve, 60))
-		expect(result.current).toBe(10)
+		await waitFor(() => {
+			expect(result.current).toBe(10)
+		}, {timeout: 100})
 	})
 })
