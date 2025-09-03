@@ -379,57 +379,76 @@ describe('useLoad', () => {
 		test('fn can check loadingRef.current to avoid duplicate calls', async () => {
 			const {result} = renderHook(() => useLoad<string, []>())
 
-			// Track how many times we create a new promise
-			let promiseCreationCount = 0
-
-			// Create a load function that checks loadingRef to avoid duplicate work
-			const loadFn = result.current.load(async () => {
-				// Check if there's already an ongoing operation
-				if (result.current.loadingRef.current) {
-					// Return the existing promise to avoid duplicate work
-					return result.current.loadingRef.current
-				}
-
-				// Create a new promise only if we don't have one
-				promiseCreationCount++
-				return new Promise<string>(resolve => {
-					// Simulate async work
-					setTimeout(() => resolve('result-' + promiseCreationCount), 50)
+			// Track how many times we create a new expensive operation
+			let expensiveOperationCount = 0
+			
+			// Create explicit resolver for controlling the promise
+			let resolvePromise: ((value: string) => void) | null = null
+			
+			// Mock function that represents an expensive operation
+			const doExpensiveOperation = vi.fn(() => {
+				expensiveOperationCount++
+				return new Promise<string>((resolve) => {
+					resolvePromise = resolve
+					// Simulate expensive async work
+					setTimeout(() => resolve(`result-${expensiveOperationCount}`), 100)
 				})
 			})
 
-			// First call - should create a new promise
+			// Create a load function that checks loadingRef to avoid duplicate work
+			const loadFn = result.current.load(async (disposer) => {
+				// Check if there's already an ongoing operation
+				if (result.current.loadingRef.current) {
+					// Wait for and return the result of the existing promise
+					// This avoids starting a new expensive operation
+					return await result.current.loadingRef.current
+				}
+
+				// Only do the expensive operation if nothing is in progress
+				return await doExpensiveOperation()
+			})
+
+			// First call - should create a new expensive operation
 			let promise1: Promise<string>
 			act(() => {
 				promise1 = loadFn()
 			})
 
-			expect(promiseCreationCount).toBe(1)
-			expect(result.current.loadingRef.current).toBe(promise1!)
+			expect(doExpensiveOperation).toHaveBeenCalledTimes(1)
+			expect(expensiveOperationCount).toBe(1)
+			expect(result.current.loadingRef.current).toBe(promise1)
 			expect(result.current.loading).toBe(true)
 
 			// Second call while first is still in progress
-			// Should reuse the same underlying promise
+			// Should NOT start a new expensive operation
 			let promise2: Promise<string>
 			act(() => {
 				promise2 = loadFn()
 			})
 
-			expect(promiseCreationCount).toBe(1) // No new promise created
-			expect(result.current.loadingRef.current).toBe(promise2!)
+			expect(doExpensiveOperation).toHaveBeenCalledTimes(1) // Not called again
+			expect(expensiveOperationCount).toBe(1) // No new operation started
+			// Note: promise2 !== promise1, but they'll resolve to the same value
+			expect(result.current.loadingRef.current).toBe(promise2)
 
-			// Third call - still reusing the same promise
+			// Third call - still shouldn't start a new expensive operation
 			let promise3: Promise<string>
 			act(() => {
 				promise3 = loadFn()
 			})
 
-			expect(promiseCreationCount).toBe(1) // Still no new promise
+			expect(doExpensiveOperation).toHaveBeenCalledTimes(1) // Still not called again
+			expect(expensiveOperationCount).toBe(1) // Still no new operation
+			expect(result.current.loadingRef.current).toBe(promise3)
+			
+			// Now explicitly resolve the expensive operation
+			resolvePromise!('result-1')
 
 			// All three calls should resolve to the same value
+			// because they all waited for the same expensive operation
 			const [value1, value2, value3] = await Promise.all([promise1!, promise2!, promise3!])
 			expect(value1).toBe('result-1')
-			expect(value2).toBe('result-1')
+			expect(value2).toBe('result-1')  
 			expect(value3).toBe('result-1')
 
 			await waitFor(() => {
@@ -439,14 +458,16 @@ describe('useLoad', () => {
 			})
 
 
-			// Fourth call after completion - should create a new promise
+			// Fourth call after completion - should create a new expensive operation
 			let promise4: Promise<string>
 			act(() => {
 				promise4 = loadFn()
 			})
 
-			expect(promiseCreationCount).toBe(2) // New promise created
+			expect(doExpensiveOperation).toHaveBeenCalledTimes(2) // New operation started
+			expect(expensiveOperationCount).toBe(2) // New operation count
 
+			// The setTimeout in doExpensiveOperation will auto-resolve after 100ms
 			const value4 = await promise4!
 			expect(value4).toBe('result-2')
 
