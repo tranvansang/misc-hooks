@@ -11,10 +11,10 @@ import {
 	useSyncExternalStore
 } from 'react'
 import deepEqual from 'deep-equal'
-import {type Atom, combineAtoms, makeAtom} from './atom.js'
+import {type Atom, makeAtom} from './atom.js'
 import {type Disposer, makeDisposer} from './disposer.js'
 
-export {type Atom, makeAtom, combineAtoms}
+export {type Atom, makeAtom}
 export {type Disposer, makeDisposer}
 
 type OptionalArraySub<T extends readonly unknown[],
@@ -78,14 +78,8 @@ export function useMounted() {
 export function useTimedOut(timeout: number) {
 	const [timedOut, enable] = useTurnOn()
 	useEffect(() => {
-		let cancelled = false
-		const timer = setTimeout(() => {
-			if (!cancelled) enable()
-		}, timeout)
-		return () => {
-			cancelled = true
-			clearTimeout(timer)
-		}
+		const timer = setTimeout(enable, timeout)
+		return () => clearTimeout(timer)
 	}, [enable, timeout])
 	return timedOut
 }
@@ -145,7 +139,7 @@ export function useEffectWithPrevDeps<T extends readonly unknown[]>(
 		() => {
 			const {current} = depsRef
 			depsRef.current = deps
-			return effect((current || []) as unknown as OptionalArray<T>)
+			return effect((current ?? []) as unknown as OptionalArray<T>)
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		deps
@@ -161,7 +155,7 @@ export function useLayoutEffectWithPrevDeps<T extends readonly unknown[]>(
 		() => {
 			const {current} = depsRef
 			depsRef.current = deps
-			if (!deepEqual(current, deps)) return effect((current || []) as unknown as OptionalArray<T>)
+			return effect((current ?? []) as unknown as OptionalArray<T>)
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		deps
@@ -208,7 +202,7 @@ export function useUpdate<T>(getValue: (current?: T) => T) {
 export function useKeep<T>(value: T): T {
 	const ref = useRef(value)
 	if (value !== undefined) ref.current = value
-	return value ?? ref.current
+	return ref.current
 }
 
 export function useAtom<T>(atom: Atom<T>) {
@@ -232,12 +226,14 @@ type LoadState<T> = {
 }
 
 export function useLoad<T, Params extends any[]>(getInitial?: () => T | undefined): LoadState<T> & {
+	loadingRef: RefObject<undefined>
 	load(cb: (disposer: {
 		signal: Disposer['signal']
 		addDispose: Disposer['addDispose']
 	}, ...params: Params) => T): (...params: Params) => T
 }
 export function useLoad<T, Params extends any[]>(getInitial?: () => T | undefined): LoadState<T> & {
+	loadingRef: RefObject<Promise<T> | undefined>
 	load(cb: (disposer: {
 		signal: Disposer['signal']
 		addDispose: Disposer['addDispose']

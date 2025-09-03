@@ -5,20 +5,19 @@
 
 A collection of essential React hooks for state management, async operations, and common UI patterns.
 
+## Features
+
+- 🎯 **Simple & Powerful**: Atomic state management without providers
+- 🔄 **Async Made Easy**: Advanced data loading with automatic cleanup
+- 🧹 **Resource Management**: Built-in disposal and cleanup patterns
+- ⚡ **Zero Config**: No providers or wrappers needed
+- 🌐 **SSR Ready**: Server-side rendering support
+
 ## Installation
 
 ```bash
 npm i misc-hooks
 ```
-
-## Features
-
-- **State Management**: Simple atomic state with `makeAtom()` and `useAtom()`
-- **Resource Management**: Resource management with `makeDisposer()`.
-- **Async Data Loading**: Enhanced async handling with `useLoad()`. Server-side rendering compatibility with `getInitial` pattern.
-- **Utility Hooks**: Common patterns like `useDebounce()`, `useDeepMemo()`, `useKeep()`, and more
-- **TypeScript**: Full TypeScript support with exported types
-- **Zero Config**: No providers or wrappers needed
 
 ## 1. State Management: `makeAtom()` and `useAtom()`
 
@@ -63,26 +62,46 @@ unsub() // unsubscribe
 
 ### API
 
-- `makeAtom(initialValue?: T)`: create an atom with an initial value.
-- `useAtom(atom: Atom<T>): T`: use an atom in a React component.
-- `atom.value`: get or set the value synchronously.
-- `atom.sub(subscriber, options?)`: subscribe to value changes. The subscriber receives `(newValue, oldValue)` and can return a cleanup function.
-  - `options.now`: if `true`, the subscriber is called immediately with the current value as newValue and `undefined` as oldValue
-  - `options.skip`: a function that receives `(newValue, oldValue)` and returns `true` to skip the subscriber call
+- `makeAtom<T>(initialValue?: T)`: Creates an atom with optional initial value
+- `useAtom(atom: Atom<T>): T`: React hook to subscribe to atom changes
+- `atom.value`: Get or set the value synchronously
+- `atom.sub(subscriber, options?)`: Subscribe to value changes
+  - Returns unsubscribe function
+  - Subscriber receives `(newValue, oldValue)` and can return cleanup function
+  - Options:
+    - `now: boolean` - Call subscriber immediately with current value
+    - `skip: (newVal, oldVal) => boolean` - Skip subscriber if returns true
 
 ## 2. Resource Management: `makeDisposer()`
 
+Manage cleanup of resources with AbortSignal integration.
+
+### Sample Usage
+
+```typescript
+const disposer = makeDisposer()
+
+// Use with fetch API
+fetch('/api/data', { signal: disposer.signal })
+
+// Add cleanup functions
+disposer.addDispose(() => console.log('Cleanup 1'))
+disposer.addDispose(() => console.log('Cleanup 2'))
+
+// Clean up everything (aborts signal and calls cleanup functions)
+disposer.dispose() // Subsequent calls are no-op
+```
+
 ### API
 
-`makeDisposer(): Disposer`: returns an `Disposer` object.
-
+`makeDisposer()`: Creates a new Disposer instance
 `Disposer` object has the following properties:
-- `dispose()`: dispose the resources by: aborting the signal, calling all disposer functions added by `addDispose()`. Calling `dispose()` from second time is a no-op.
-- `signal`: an `AbortSignal` object that is aborted when `Disposer.dispose()` method is called.
-- `addDispose(fn?: () => void)`:
-  - if `fn` is falsy, do nothing.
-  - Otherwise, if `Disposer.dispose()` is called before, synchronously call `fn`.
-  - Otherwise, add `fn` to the list of functions to be called when `Disposer.dispose()` is called.
+- `dispose()`: Abort signal and call all cleanup functions (no-op if already disposed)
+- `signal`: AbortSignal that's aborted when disposed
+- `addDispose(fn?)`: Add cleanup function
+  - Ignores falsy values
+  - Calls immediately if already disposed
+  - Functions called in reverse order on dispose
 
 ## 3. Async Function Handling and Loading: `useLoad()`
 
@@ -104,7 +123,7 @@ if (error) throw error // propagate error to ErrorBoundary
 
 ### API
 
-`useLoad<T>(getInitial?: () => T): LoadState`: returns a `LoadState` object.
+`useLoad<T, Params>(getInitial?: () => T): LoadState<T>`
 
 - (optional) `getInitial?: () => T | undefined`: a function that optionally and synchronously returns initial data.
 
@@ -112,13 +131,13 @@ if (error) throw error // propagate error to ErrorBoundary
 	If it throws an error, the error is caught, without propagating to the ErrorBoundary, and set to `error` in `LoadState`.
 
 The returned `LoadState` object has the following properties:
-- `data`: the latest data, or `undefined` if data is loading or error.
-- `error`: the error, or `undefined` if data is loading or no error.
-- `loading`: a boolean that is `true` when the data is loading.
-- `loadingRef`: (advanced usage) a ref whose value is the promise of the latest ongoing `load(fn)()`.
-- `load`: the `load()` function has 2 interfaces to support both async and synchronous functions.
-	- `load(fn: (disposer: PartialDisposer, ...params: Params) => T): (...params: Params) => T`
-	- `load(fn: (disposer: PartialDisposer, ...params: Params) => Promise<T>): (...params: Params) => Promise<T>`
+- `data`: The latest data, or `undefined` if loading or error
+- `error`: The error, or `undefined` if loading or no error
+- `loading`: Boolean that is `true` when data is loading
+- `loadingRef`: Ref containing the promise of ongoing async `load()` call (undefined for sync calls)
+- `load`: Function with 2 overloads for sync and async operations:
+  - `load(fn: (disposer, ...params) => T): (...params) => T`
+  - `load(fn: (disposer, ...params) => Promise<T>): (...params) => Promise<T>`
   
 #### `load()` function
 
@@ -303,33 +322,33 @@ useEffectWithPrevDeps(
 ## 5. Utility Hooks
 
 ### Frequently Used
-- `useEffectWithPrevDeps((prevDeps) => {}, [...deps])`: similar to `useEffect`, but provides previous deps to the effect function.
-- `memoValue = useDeepMemo(value)`: get a memoized value. `value` is compared by `deep-equal` package.
-- `lastDefinedValue = useKeep(value)`: keep the last defined value. When `value` is `undefined`, the last non-`undefined` value is returned.
-- `ref = useRefValue(value)`: similar to [`useEffectEvent`](https://react.dev/learn/separating-events-from-effects), get a ref whose value is always the latest `value`.
-- `timedOut = useTimedOut(timeout)`: get a boolean whose value is `true` after `timeout` ms.
-- `state = useDebounce(value, timeout)`: get a debounced value. `state` is updated after at least `timeout` ms.
-- `[state, setState, stateRef] = useRefState(initialState)`: similar to `useState`. `stateRef`'s value is set immediately and synchronously after `setState` is called. Note: `initialState` can not be a function.
-- `update = useForceUpdate()`: get a function to force re-render component.
+- `useEffectWithPrevDeps((prevDeps) => {}, [...deps])` - Similar to `useEffect`, but provides previous deps to the effect function
+- `memoValue = useDeepMemo(value)` - Get a memoized value. `value` is compared by `deep-equal` package
+- `lastDefinedValue = useKeep(value)` - Keep the last defined value. When `value` is `undefined`, the last non-`undefined` value is returned
+- `ref = useRefValue(value)` - Similar to [`useEffectEvent`](https://react.dev/learn/separating-events-from-effects), get a ref whose value is always the latest `value`
+- `timedOut = useTimedOut(timeout)` - Get a boolean whose value is `true` after `timeout` ms
+- `state = useDebounce(value, timeout)` - Get a debounced value. `state` is updated after at least `timeout` ms
+- `[state, setState, stateRef] = useRefState(initialState)` - Similar to `useState`. `stateRef`'s value is set immediately and synchronously after `setState` is called. Note: `initialState` cannot be a function
+- `update = useForceUpdate()` - Get a function to force re-render component
 
 ### Additional Utilities
-- `[state, setState] = useDefaultState(defaultState)`: when `defaultState` changes, set `state` to `defaultState`.
-- `[state, update] = useUpdate(getValue)`: get a function to force re-render component. `getValue` is a function to get the latest value to compare with the previous value. The latest `getValue` is always used (`useReducer` specs).
-- `nextState = nextStateFromAction(action, state)`: get next state from `setState` action.
-- `[state, toggle] = useToggle(init = false)`: `toggle()` to toggle boolean `state` state, or, `toggle(true/false)` to set state.
-- `[state, enable] = useTurnOn()`: `enable()` to set state to `true`.
-- `[state, disable] = useTurnOff()`: `disable()` to set state to `false`.
-- `unmountedRef = useUnmountedRef()`: get a ref whose value is `true` when component is unmounted. Note, from react 18, the effect is sometimes unmounted and mounted again.
-- `mountedRef = useMountedRef()`: get a ref whose value is `true` when component is mounted. Note: ref's value is not set to `false` when component is unmounted.
-- `mounted = useMounted()`: get a boolean whose value is `true` when component is mounted. Note: the value is not set to `false` when component is unmounted.
-- `prefRef = usePrevRef(value)`: get a ref whose value is the previous `value`.
-- `useLayoutEffectWithPrevDeps((prevDeps) => {}, [...deps])`: `useLayoutEffect` version of `useEffectWithPrevDeps`.
-- Type `OptionalArray` (type).
-- Type `Disposer` (type) - utility type for cleanup management.
+- `[state, setState] = useDefaultState(defaultState)` - When `defaultState` changes, set `state` to `defaultState`
+- `[state, update] = useUpdate(getValue)` - Get a function to force re-render component. `getValue` is a function to get the latest value to compare with the previous value. The latest `getValue` is always used (`useReducer` specs)
+- `nextState = nextStateFromAction(action, state)` - Get next state from `setState` action
+- `[state, toggle] = useToggle(init = false)` - `toggle()` to toggle boolean `state`, or `toggle(true/false)` to set state
+- `[state, enable] = useTurnOn()` - `enable()` to set state to `true`
+- `[state, disable] = useTurnOff()` - `disable()` to set state to `false`
+- `unmountedRef = useUnmountedRef()` - Get a ref whose value is `true` when component is unmounted. Note: from React 18, the effect is sometimes unmounted and mounted again
+- `mountedRef = useMountedRef()` - Get a ref whose value is `true` when component is mounted. Note: ref's value is not set to `false` when component is unmounted
+- `mounted = useMounted()` - Get a boolean whose value is `true` when component is mounted. Note: the value is not set to `false` when component is unmounted
+- `prevRef = usePrevRef(value)` - Get a ref whose value is the previous `value`
+- `useLayoutEffectWithPrevDeps((prevDeps) => {}, [...deps])` - `useLayoutEffect` version of `useEffectWithPrevDeps`
+- Type `OptionalArray` - Array with optional elements
+- Type `Disposer` - Utility type for cleanup management
 
 ## Requirements
 
-- React 18.0 or higher (for `useSyncExternalStore` API usages)
+- React 18.0 or higher (for `useSyncExternalStore` API usage)
 
 ## Contributing
 
@@ -338,4 +357,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT © [Sang Tran](https://github.com/tranvansang)
+
 

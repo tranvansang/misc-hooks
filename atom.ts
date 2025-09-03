@@ -2,8 +2,8 @@ export interface Atom<T> {
 	get value(): T
 	set value(val: T)
 	sub(
-		subscriber: (val: T, old: T) => void | (() => void),
-		options?: {now?: boolean, skip?(val: T, old: T): boolean}
+		subscriber: (val: T, old?: T) => void | (() => void),
+		options?: {now?: boolean, skip?(val: T, old?: T): boolean}
 	): () => void
 }
 export function makeAtom<T>(): Atom<T | undefined>
@@ -12,9 +12,9 @@ export function makeAtom<T>(initial?: T | undefined) {
 	let value = initial as T
 	let count = 0
 	const subscribers: Record<number, {
-		subscriber: (val: T, old: T) => void | (() => void)
+		subscriber: (val: T, old?: T) => void | (() => void)
 		cleanup: void | (() => void)
-		skip?(val: T, old: T): boolean
+		skip?(val: T, old?: T): boolean
 	}> = Object.create(null)
 	return {
 		get value() {
@@ -31,13 +31,13 @@ export function makeAtom<T>(initial?: T | undefined) {
 				}
 		},
 		sub(
-			subscriber: (val: T, old: T) => void | (() => void),
-			{now = false, skip}: {now?: boolean, skip?(val: T, old: T): boolean} = {}
+			subscriber: (val: T, old?: T) => void | (() => void),
+			{now = false, skip}: {now?: boolean, skip?(val: T, old?: T): boolean} = {}
 		) {
 			const id = count++
 			subscribers[id] = {
 				subscriber,
-				cleanup: now && !skip?.(value, undefined as T) ? subscriber(value, undefined as T) : undefined,
+				cleanup: now && !skip?.(value, undefined) ? subscriber(value, undefined) : undefined,
 				skip,
 			}
 			return () => {
@@ -47,10 +47,3 @@ export function makeAtom<T>(initial?: T | undefined) {
 		}
 	}
 }
-export function combineAtoms<T extends readonly any[]>(atoms: {[K in keyof T]: Atom<T[K]>}): Atom<T> {
-	const atom = makeAtom<T>(atoms.map(a => a.value) as unknown as T)
-	for (const a of atoms)
-		a.sub(() => void (atom.value = atoms.map(a => a.value) as unknown as T))
-	return atom
-}
-

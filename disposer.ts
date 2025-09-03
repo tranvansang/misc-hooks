@@ -11,7 +11,7 @@ export function makeDisposer() {
 		dispose(this: void) {
 			if (abortController.signal.aborted) return
 			abortController.abort()
-			for (const dispose of disposeFns.slice().reverse()) dispose()
+			for (let i = disposeFns.length - 1; i >= 0; i--) disposeFns[i]()
 		},
 		signal: abortController.signal,
 	}
