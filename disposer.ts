@@ -9,6 +9,7 @@ export function makeDisposer() {
 			else disposeFns.push(dispose)
 		},
 		dispose(this: void) {
+			if (abortController.signal.aborted) return
 			abortController.abort()
 			for (const dispose of disposeFns.slice().reverse()) dispose()
 		},

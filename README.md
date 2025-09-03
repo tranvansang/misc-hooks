@@ -77,7 +77,7 @@ unsub() // unsubscribe
 `makeDisposer(): Disposer`: returns an `Disposer` object.
 
 `Disposer` object has the following properties:
-- `dispose()`: dispose the resources by: aborting the signal, calling all disposer functions added by `addDispose()`.
+- `dispose()`: dispose the resources by: aborting the signal, calling all disposer functions added by `addDispose()`. Calling `dispose()` from second time is a no-op.
 - `signal`: an `AbortSignal` object that is aborted when `Disposer.dispose()` method is called.
 - `addDispose(fn?: () => void)`:
   - if `fn` is falsy, do nothing.
