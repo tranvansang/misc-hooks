@@ -3,7 +3,7 @@ export function makeDisposer() {
 	const disposeFns: (() => void)[] = []
 	const abortController = new AbortController()
 	return {
-		addDispose(this: void, dispose?: () => void) {
+		addDispose(this: void, dispose?: void | (() => void)) {
 			if (!dispose) return
 			if (abortController.signal.aborted) dispose()
 			else disposeFns.push(dispose)

@@ -153,7 +153,7 @@ Besides the `PartialDisposer` object, `fn` also receives the parameters passed t
 
 `PartialDisposer` object has the following properties:
 - `signal`: an `AbortSignal` object that is aborted when the component is unmounted or another `load()()` is called.
-- `addDispose(fn?: () => void)`: add a function to be called when the component is unmounted or the next `load()()` is called.
+- `addDispose(fn?: void | (() => void))`: add a function to be called when the component is unmounted or the next `load()()` is called.
 Similar to `makeDisposer()` API, if the component is unmounted or the next `load()()` is called before, `fn` is immediately and synchronously called.
 
 #### `loadingRef` value
