@@ -1,6 +1,6 @@
 import {describe, it, expect, vi} from './helpers.ts'
 import {renderHook, act} from './helpers.ts'
-import {useForceUpdate} from '../index.js'
+import {useForceUpdate} from '../index.ts'
 
 describe('useForceUpdate', () => {
 	it('should return a stable function', () => {

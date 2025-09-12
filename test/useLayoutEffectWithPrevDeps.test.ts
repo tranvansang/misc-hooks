@@ -1,6 +1,6 @@
 import {describe, it, expect, vi} from './helpers.ts'
 import {renderHook} from './helpers.ts'
-import {useLayoutEffectWithPrevDeps} from '../index.js'
+import {useLayoutEffectWithPrevDeps} from '../index.ts'
 
 describe('useLayoutEffectWithPrevDeps', () => {
 	it('should call effect with empty array on mount', () => {

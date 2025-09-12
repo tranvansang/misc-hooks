@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook} from './helpers.ts'
-import {usePrevRef} from '../index.js'
+import {usePrevRef} from '../index.ts'
 
 describe('usePrevRef', () => {
 	it('should initially return undefined', () => {

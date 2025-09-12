@@ -1,5 +1,5 @@
 import {describe, it, expect} from './helpers.ts'
-import {nextStateFromAction} from '../index.js'
+import {nextStateFromAction} from '../index.ts'
 
 describe('nextStateFromAction', () => {
 	it('should return the action directly when action is not a function', () => {

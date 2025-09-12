@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook, act} from './helpers.ts'
-import {useTurnOn} from '../index.js'
+import {useTurnOn} from '../index.ts'
 
 describe('useTurnOn', () => {
 	it('should initialize with false value', () => {

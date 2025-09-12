@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook, act} from './helpers.ts'
-import {useRefState} from '../index.js'
+import {useRefState} from '../index.ts'
 
 describe('useRefState', () => {
 	it('should initialize with provided value', () => {

@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook, act} from './helpers.ts'
-import {useToggle} from '../index.js'
+import {useToggle} from '../index.ts'
 
 describe('useToggle', () => {
 	it('should initialize with default false value', () => {

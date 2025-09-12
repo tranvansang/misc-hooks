@@ -1,5 +1,6 @@
 import {describe, expect, test, vi, act, renderHook} from './helpers.ts'
-import {Atom, makeAtom, useAtom, useRefState} from '../index.ts'
+import type {Atom} from '../index.ts'
+import {makeAtom, useAtom, useRefState} from '../index.ts'
 import {useEffect, useState, useSyncExternalStore} from 'react'
 
 describe('useAtom', () => {

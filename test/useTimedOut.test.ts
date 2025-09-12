@@ -1,6 +1,6 @@
 import {describe, it, expect, vi} from './helpers.ts'
 import {renderHook, waitFor} from '@testing-library/react'
-import {useTimedOut} from '../index.js'
+import {useTimedOut} from '../index.ts'
 
 describe('useTimedOut', () => {
 	it('should initialize with false value', () => {

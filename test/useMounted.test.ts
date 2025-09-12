@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook} from './helpers.ts'
-import {useMounted} from '../index.js'
+import {useMounted} from '../index.ts'
 
 describe('useMounted', () => {
 	it('should initialize with false value and become true after mount', () => {

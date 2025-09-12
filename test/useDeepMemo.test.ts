@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook} from './helpers.ts'
-import {useDeepMemo} from '../index.js'
+import {useDeepMemo} from '../index.ts'
 
 describe('useDeepMemo', () => {
 	it('should return initial value', () => {

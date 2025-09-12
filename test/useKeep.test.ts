@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook} from './helpers.ts'
-import {useKeep} from '../index.js'
+import {useKeep} from '../index.ts'
 
 describe('useKeep', () => {
 	it('should return initial value', () => {

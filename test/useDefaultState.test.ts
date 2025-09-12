@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook, act} from './helpers.ts'
-import {useDefaultState} from '../index.js'
+import {useDefaultState} from '../index.ts'
 
 describe('useDefaultState', () => {
 	it('should initialize with default state', () => {

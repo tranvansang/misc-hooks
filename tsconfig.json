@@ -10,8 +10,9 @@
 		"downlevelIteration": true,
 		"strictNullChecks": true,
 		"moduleResolution": "Node",
-		"esModuleInterop": true
+		"esModuleInterop": true,
+		"allowImportingTsExtensions": true
 	},
-	"include": ["index.ts", "atom.ts", "disposer.ts"],
+	"include": ["index.ts", "atom.ts", "disposer.ts", "test/*.ts"],
 	"exclude": ["node_modules"]
 }

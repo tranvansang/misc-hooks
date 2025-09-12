@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook} from './helpers.ts'
-import {useUnmountedRef} from '../index.js'
+import {useUnmountedRef} from '../index.ts'
 
 describe('useUnmountedRef', () => {
 	it('should initialize with false value', () => {

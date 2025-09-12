@@ -11,11 +11,13 @@ import {
 	useSyncExternalStore
 } from 'react'
 import deepEqual from 'deep-equal'
-import {type Atom, makeAtom} from './atom.js'
-import {type Disposer, makeDisposer} from './disposer.js'
+import type {Atom} from './atom.ts'
+import {makeAtom} from './atom.ts'
+import type {Disposer} from './disposer.ts'
+import {makeDisposer} from './disposer.ts'
 
-export {type Atom, makeAtom}
-export {type Disposer, makeDisposer}
+export type {Atom, Disposer}
+export {makeAtom, makeDisposer}
 
 type OptionalArraySub<T extends readonly unknown[],
 	R extends readonly unknown[]> = number extends R['length']

@@ -1,6 +1,6 @@
 import {describe, it, expect, vi} from './helpers.ts'
 import {renderHook, act, waitFor} from './helpers.ts'
-import {useDebounce} from '../index.js'
+import {useDebounce} from '../index.ts'
 
 describe('useDebounce', () => {
 	it('should return initial value immediately', () => {

@@ -1,6 +1,6 @@
 import {describe, it, expect} from './helpers.ts'
 import {renderHook, act} from './helpers.ts'
-import {useUpdate} from '../index.js'
+import {useUpdate} from '../index.ts'
 
 describe('useUpdate', () => {
 	it('should initialize with getValue result', () => {
