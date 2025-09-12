@@ -1,7 +1,7 @@
 import {
-	Dispatch,
-	RefObject,
-	SetStateAction,
+	type Dispatch,
+	type RefObject,
+	type SetStateAction,
 	useCallback,
 	useEffect,
 	useLayoutEffect,

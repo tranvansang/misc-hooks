@@ -1,6 +1,6 @@
-import {describe, expect, test, vi} from 'vitest'
+import {describe, expect, test, vi} from './helpers.ts'
 import {act, renderHook, waitFor} from '@testing-library/react'
-import {useLoad} from '../index'
+import {useLoad} from '../index.ts'
 
 describe('useLoad', () => {
 		test('initial state without getInitial', () => {

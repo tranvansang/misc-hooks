@@ -1,5 +1,5 @@
-import {describe, expect, test, vi} from 'vitest'
-import {makeAtom} from '../index'
+import {describe, expect, test, vi} from './helpers.ts'
+import {makeAtom} from '../index.ts'
 
 describe('makeAtom', () => {
 	test('creates atom with initial value', () => {

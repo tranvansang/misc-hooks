@@ -1,5 +1,5 @@
-import {describe, expect, test, vi} from 'vitest'
-import {makeDisposer} from '../index'
+import {describe, expect, test, vi} from './helpers.ts'
+import {makeDisposer} from '../index.ts'
 
 describe('makeDisposer', () => {
 	test('creates a disposer with signal and methods', () => {

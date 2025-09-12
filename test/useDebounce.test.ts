@@ -1,5 +1,5 @@
-import {describe, it, expect, vi} from 'vitest'
-import {renderHook, act, waitFor} from '@testing-library/react'
+import {describe, it, expect, vi} from './helpers.ts'
+import {renderHook, act, waitFor} from './helpers.ts'
 import {useDebounce} from '../index.js'
 
 describe('useDebounce', () => {

@@ -1,6 +1,5 @@
-import {describe, expect, test, vi} from 'vitest'
-import {act, renderHook} from '@testing-library/react'
-import {Atom, makeAtom, useAtom, useRefState} from '../index'
+import {describe, expect, test, vi, act, renderHook} from './helpers.ts'
+import {Atom, makeAtom, useAtom, useRefState} from '../index.ts'
 import {useEffect, useState, useSyncExternalStore} from 'react'
 
 describe('useAtom', () => {

@@ -1,5 +1,5 @@
-import {describe, it, expect, vi} from 'vitest'
-import {renderHook, act} from '@testing-library/react'
+import {describe, it, expect, vi} from './helpers.ts'
+import {renderHook, act} from './helpers.ts'
 import {useForceUpdate} from '../index.js'
 
 describe('useForceUpdate', () => {

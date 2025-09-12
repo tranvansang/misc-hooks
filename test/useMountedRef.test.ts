@@ -1,5 +1,5 @@
-import {describe, it, expect} from 'vitest'
-import {renderHook} from '@testing-library/react'
+import {describe, it, expect} from './helpers.ts'
+import {renderHook} from './helpers.ts'
 import {useMountedRef} from '../index.js'
 
 describe('useMountedRef', () => {

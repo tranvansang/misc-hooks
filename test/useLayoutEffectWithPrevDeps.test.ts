@@ -1,5 +1,5 @@
-import {describe, it, expect, vi} from 'vitest'
-import {renderHook} from '@testing-library/react'
+import {describe, it, expect, vi} from './helpers.ts'
+import {renderHook} from './helpers.ts'
 import {useLayoutEffectWithPrevDeps} from '../index.js'
 
 describe('useLayoutEffectWithPrevDeps', () => {

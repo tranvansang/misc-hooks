@@ -1,4 +1,4 @@
-import {describe, it, expect} from 'vitest'
+import {describe, it, expect} from './helpers.ts'
 import {nextStateFromAction} from '../index.js'
 
 describe('nextStateFromAction', () => {
