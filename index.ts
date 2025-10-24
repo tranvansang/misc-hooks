@@ -225,21 +225,21 @@ type LoadState<T> = {
 	loading: boolean
 }
 
-export function useLoad<T, Params extends any[]>(getInitial?: () => T | undefined): LoadState<T> & {
+export function useLoad<T, Params extends any[] = []>(getInitial?: () => T | undefined): LoadState<T> & {
 	loadingRef: RefObject<undefined>
 	load<T, Params extends any[]>(cb: (disposer: {
 		signal: Disposer['signal']
 		addDispose: Disposer['addDispose']
 	}, ...params: Params) => T): (...params: Params) => T
 }
-export function useLoad<T, Params extends any[]>(getInitial?: () => T | undefined): LoadState<T> & {
+export function useLoad<T, Params extends any[] = []>(getInitial?: () => T | undefined): LoadState<T> & {
 	loadingRef: RefObject<Promise<T> | undefined>
 	load<T, Params extends any[]>(cb: (disposer: {
 		signal: Disposer['signal']
 		addDispose: Disposer['addDispose']
 	}, ...params: Params) => Promise<T>): (...params: Params) => Promise<T>
 }
-export function useLoad<T, Params extends any[]>(
+export function useLoad<T, Params extends any[] = []>(
 	getInitial?: () => T | undefined // may throw an error
 ) {
 	const loadingRef = useRef<Promise<T>>(undefined)
