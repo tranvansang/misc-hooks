@@ -225,23 +225,16 @@ type LoadState<T> = {
 	loading: boolean
 }
 
-export function useLoad<T, Params extends any[] = []>(getInitial?: () => T | undefined): LoadState<T> & {
-	loadingRef: RefObject<undefined>
-	load<T, Params extends any[]>(cb: (disposer: {
-		signal: Disposer['signal']
-		addDispose: Disposer['addDispose']
-	}, ...params: Params) => T): (...params: Params) => T
-}
-export function useLoad<T, Params extends any[] = []>(getInitial?: () => T | undefined): LoadState<T> & {
-	loadingRef: RefObject<Promise<T> | undefined>
-	load<T, Params extends any[]>(cb: (disposer: {
-		signal: Disposer['signal']
-		addDispose: Disposer['addDispose']
-	}, ...params: Params) => Promise<T>): (...params: Params) => Promise<T>
-}
 export function useLoad<T, Params extends any[] = []>(
 	getInitial?: () => T | undefined // may throw an error
-) {
+): LoadState<T> & {
+	loadingRef: RefObject<Promise<T> | undefined>
+	loadAbortable<T2, Params2 extends any[]>(cb: (disposer: {
+		signal: Disposer['signal']
+		addDispose: Disposer['addDispose']
+	}, ...params: Params2) => T2): (...params: Params2) => T2
+	load<Callback extends (...params: any[]) => any>(cb: Callback): Callback
+} {
 	const loadingRef = useRef<Promise<T>>(undefined)
 	const [state, setState] = useState<LoadState<T>>(() => {
 		if (!getInitial) return {loading: false} as const
@@ -258,37 +251,41 @@ export function useLoad<T, Params extends any[] = []>(
 		disposerRef.current = makeDisposer()
 	}, [])
 
-	return {...state, loadingRef, load: useCallback((fn: (disposer: {
-			signal: Disposer['signal']
-			addDispose: Disposer['addDispose']
-		}, ...params: Params) => T | Promise<T>) => (...params: Params) => {
-			if (disposerRef.current.signal.aborted) return fn({signal: disposerRef.current.signal, addDispose: disposerRef.current.addDispose}, ...params)
+	const loadAbortable: any = useCallback((fn: (disposer: {
+		signal: Disposer['signal']
+		addDispose: Disposer['addDispose']
+	}, ...params: Params) => T | Promise<T>) => (...params: Params) => {
+		if (disposerRef.current.signal.aborted) return fn({signal: disposerRef.current.signal, addDispose: disposerRef.current.addDispose}, ...params)
 
-			disposerRef.current.dispose()
-			const disposer = disposerRef.current = makeDisposer()
-			setState({loading: true})
-			try {
-				const result = fn({signal: disposer.signal, addDispose: disposer.addDispose}, ...params)
-				if (typeof (result as any)?.then === 'function') return loadingRef.current = (async () => {
-					try {
-						const data = await result
-						if (!disposer.signal.aborted) setState({data, loading: false})
-						return data
-					} catch (error) {
-						if (!disposer.signal.aborted) setState({error, loading: false})
-						throw error
-					} finally {
-						if (!disposer.signal.aborted) loadingRef.current = undefined
-					}
-				})()
-				if (!disposer.signal.aborted) {
-					loadingRef.current = undefined
-					setState({data: result as T, loading: false})
+		disposerRef.current.dispose()
+		const disposer = disposerRef.current = makeDisposer()
+		setState({loading: true})
+		try {
+			const result = fn({signal: disposer.signal, addDispose: disposer.addDispose}, ...params)
+			if (typeof (result as any)?.then === 'function') return loadingRef.current = (async () => {
+				try {
+					const data = await result
+					if (!disposer.signal.aborted) setState({data, loading: false})
+					return data
+				} catch (error) {
+					if (!disposer.signal.aborted) setState({error, loading: false})
+					throw error
+				} finally {
+					if (!disposer.signal.aborted) loadingRef.current = undefined
 				}
-				return result
-			} catch (error) {
-				if (!disposer.signal.aborted) setState({error, loading: false})
-				throw error
+			})()
+			if (!disposer.signal.aborted) {
+				loadingRef.current = undefined
+				setState({data: result as T, loading: false})
 			}
-		}, [])}
+			return result
+		} catch (error) {
+			if (!disposer.signal.aborted) setState({error, loading: false})
+			throw error
+		}
+	}, [])
+
+	const load: any = useCallback((fn: (...params: Params) => T | Promise<T>) => (...params: Params) => loadAbortable(() => fn(...params))(), [loadAbortable])
+
+	return {...state, loadingRef, loadAbortable, load}
 }

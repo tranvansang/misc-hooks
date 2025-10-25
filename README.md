@@ -112,13 +112,17 @@ Powerful async data loading with error handling, loading states, and SSR support
 ```typescript
 // Basic usage
 const {data, error, loading, load} = useLoad()
-useEffect(() => void load(async ({signal}) => await fetchData(signal))(), [load])
+useEffect(() => void load(async () => await fetchData())(), [load])
 
 // With parameters
 const {data, error, loading, load} = useLoad()
-useEffect(() => void load(async ({signal}) => await fetchData(params, {signal}))(), [load, params])
+useEffect(() => void load(async () => await fetchData(params))(), [load, params])
 
 if (error) throw error // propagate error to ErrorBoundary
+
+// Abortable
+const {data, error, loading, loadAbortable} = useLoad()
+useEffect(() => void loadAbortable(async ({signal}) => await fetchData(signal))(), [loadAbortable])
 ```
 
 ### API
@@ -134,31 +138,31 @@ The returned `LoadState` object has the following properties:
 - `data`: The latest data, or `undefined` if loading or error
 - `error`: The error, or `undefined` if loading or no error
 - `loading`: Boolean that is `true` when data is loading
-- `loadingRef`: Ref containing the promise of ongoing async `load()` call (undefined for sync calls)
-- `load`: Function with 2 overloads for sync and async operations:
-  - `load(fn: (disposer, ...params) => T): (...params) => T`
-  - `load(fn: (disposer, ...params) => Promise<T>): (...params) => Promise<T>`
+- `loadingRef`: Ref containing the promise of ongoing async `loadAbortable()` call (undefined for sync calls)
+- `loadAbortable(fn: (disposer, ...params) => T): (...params) => T`
+- `load(fn: (...params) => T): (...params) => T`: it calls `loadAbortable()` internally, but keep signature of the input callback for convenience.
   
-#### `load()` function
+#### `loadAbortable()` function
 
-`load` takes a function `fn` and returns a wrapper function.
-`load` never changes and can be safely placed in the second argument of `useEffect`.
+`loadAbortable` takes a function `fn` and returns a wrapper function.
+`loadAbortable` never changes and can be safely placed in the second argument of `useEffect`.
 The returned wrapper function, when be called, will call `fn` and handle the `LoadState` object.
+`loadAbortable` supports both synchronous and asynchronous functions.
 
 `fn` receives a `PartialDisposer` object and returns a value or a promise resolving the value, which will be placed in `data` key of the `LoadState` object, or, `error` key if an error occurs.
 While the execution of `fn` is in progress, `loading` is `true`, and both `data` and `error` are `undefined`.
 When `fn` is finished, `loading` is `false`.
 
-Besides the `PartialDisposer` object, `fn` also receives the parameters passed to the function returned by `load()`.`
+Besides the `PartialDisposer` object, `fn` also receives the parameters passed to the function returned by `loadAbortable()`.`
 
 `PartialDisposer` object has the following properties:
-- `signal`: an `AbortSignal` object that is aborted when the component is unmounted or another `load()()` is called.
-- `addDispose(fn?: void | (() => void))`: add a function to be called when the component is unmounted or the next `load()()` is called.
-Similar to `makeDisposer()` API, if the component is unmounted or the next `load()()` is called before, `fn` is immediately and synchronously called.
+- `signal`: an `AbortSignal` object that is aborted when the component is unmounted or another `loadAbortable()()` is called.
+- `addDispose(fn?: void | (() => void))`: add a function to be called when the component is unmounted or the next `loadAbortable()()` is called.
+Similar to `makeDisposer()` API, if the component is unmounted or the next `loadAbortable()()` is called before, `fn` is immediately and synchronously called.
 
 #### `loadingRef` value
 
-`loadingRef` is a ref whose value is the promise of the latest ongoing `load(fn)()` call.
+`loadingRef` is a ref whose value is the promise of the latest ongoing `loadAbortable(fn)()` call.
 This is for advanced usage.
 Typically, you will not need it.
 
@@ -174,7 +178,7 @@ If you `await` that promise, the promise will never resolve.
 ### Practical Usage
 
 #### Practical case 1:
-When `load(fn)()` is called, `error` and `data` are set to `undefined` before `fn` is called.
+When `loadAbortable(fn)()` is called, `error` and `data` are set to `undefined` before `fn` is called.
 If the last data needs to be kept while reloading, for example, when changing a page number, you want to show the current data until the next page is loaded,
 use `useKeep` hook.
 
@@ -188,8 +192,8 @@ Sample usage for practical case 1, 2, 3:
 
 ```tsx
 const memoParams = useDeepMemo(params)
-const {data, error, loading, load} = useLoad()
-useEffect(() => void load(({signal}) => fetchData(memoParams, {signal}))(), [memoParams, load]) // load data when params deeply changes
+const {data, error, loading, loadAbortable} = useLoad()
+useEffect(() => void loadAbortable(({signal}) => fetchData(memoParams, {signal}))(), [memoParams, loadAbortable]) // load data when params deeply changes
 const timedOut = useTimedOut(500)
 const dataKeep = useKeep(data)
 if (error) throw error // propagate error to ErrorBoundary
@@ -206,9 +210,9 @@ Handle async operations in effects with proper cleanup.
 Sample usage:
 
 ```typescript
-const {load} = useLoad()
+const {loadAbortable} = useLoad()
 useEffect(() => {
-	void load(
+	void loadAbortable(
 		async ({signal, addDispose}) => {
 			const loader = makeLoader()
 
@@ -221,7 +225,7 @@ useEffect(() => {
 			window.addEventListener('resize', value.update)
 			addDispose(() => window.removeEventListener('resize', value.update))
 		})()
-}, [load, params])
+}, [loadAbortable, params])
 ```
 
 #### Practical case 5: Atomic actions.
@@ -291,31 +295,31 @@ useEffect(() => void load(() => loadingRef.current ?? fetchData())(), [load, loa
 
 Load only once: use `useRef()` to check if the data is already loaded.
 ```javascript
-const {data, load} = useLoad(() => getSSRData(deepParams))
+const {data, loadAbortable} = useLoad(() => getSSRData(deepParams))
 const dataRef = useRef(data)
-useEffect(() => void (!dataRef.current && load(({signal}) => fetchData({signal}))()) , [load]) // load never changes and is safe to place in the second argument
+useEffect(() => void (!dataRef.current && loadAbortable(({signal}) => fetchData({signal}))()) , [loadAbortable]) // load never changes and is safe to place in the second argument
 // if initial data is not available, load data
 ```
 
 Re-load when params changes, client-rendering version without SSR support:
 ```javascript
 const deepParams = useDeepMemo(params)
-const {data, load} = useLoad(() => getSSRData(deepParams))
-useEffect(() => void(load(({signal}) => fetchData(deepParams, {signal}))), [deepParams, load])
+const {data, loadAbortable} = useLoad(() => getSSRData(deepParams))
+useEffect(() => void(loadAbortable(({signal}) => fetchData(deepParams, {signal}))), [deepParams, loadAbortable])
 // load data when params deeply changes AND in the first render
 ```
 
 Combine the two above samples to support SSR, only load if data is empty and re-load when params changes: use `useEffectWithPrevDeps()`:
 ```javascript
 const deepParams = useDeepMemo(params)
-const {data, load} = useLoad(() => getSSRData(deepParams))
+const {data, loadAbortable} = useLoad(() => getSSRData(deepParams))
 const dataRef = useRef(data)
 useEffectWithPrevDeps(
-  ([prevReload, prevParams]) => void ((prevReload || !dataRef.current) && load(({signal}) => fetchData(deepParams, {signal}))),
+  ([prevReload, prevParams]) => void ((prevReload || !dataRef.current) && loadAbortable(({signal}) => fetchData(deepParams, {signal}))),
 	// prevReload is only falsy in the first render.
 	// in the first render, if initial data is empty, load.
 	// from the second render, if this effect is called, i.e., if params deeply changed, load.
-  [load, deepParams]
+  [loadAbortable, deepParams]
 )
 ```
 

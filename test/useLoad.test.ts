@@ -34,7 +34,7 @@ describe('useLoad', () => {
 		test('synchronous load function', async () => {
 			const {result} = renderHook(() => useLoad<number, [number, number]>())
 
-			const loadFn = result.current.load((disposer, a, b) => a + b)
+			const loadFn = result.current.loadAbortable((disposer, a, b) => a + b)
 
 			expect(result.current.loading).toBe(false)
 
@@ -52,7 +52,7 @@ describe('useLoad', () => {
 		test('asynchronous load function success', async () => {
 			const {result} = renderHook(() => useLoad<string, [string]>())
 
-			const loadFn = result.current.load(async (disposer, value) => {
+			const loadFn = result.current.loadAbortable(async (disposer, value) => {
 				await new Promise(resolve => setTimeout(resolve, 10))
 				return `async-${value}`
 			})
@@ -83,7 +83,7 @@ describe('useLoad', () => {
 			const {result} = renderHook(() => useLoad<string, []>())
 
 			const error = new Error('Async error')
-			const loadFn = result.current.load(async () => {
+			const loadFn = result.current.loadAbortable(async () => {
 				await new Promise(resolve => setTimeout(resolve, 10))
 				throw error
 			})
@@ -112,7 +112,7 @@ describe('useLoad', () => {
 			const {result} = renderHook(() => useLoad<string, []>())
 
 			const error = new Error('Sync error')
-			const loadFn = result.current.load(() => {
+			const loadFn = result.current.loadAbortable(() => {
 				throw error
 			})
 
@@ -138,7 +138,7 @@ describe('useLoad', () => {
 			const disposeFn = vi.fn()
 			const {result, unmount} = renderHook(() => useLoad<string, []>())
 
-			const loadFn = result.current.load((disposer) => {
+			const loadFn = result.current.loadAbortable((disposer) => {
 				disposer.addDispose(disposeFn)
 				return 'test'
 			})
@@ -160,7 +160,7 @@ describe('useLoad', () => {
 			let firstAborted = false
 			let secondAborted = false
 
-			const loadFn = result.current.load(async (disposer, value) => {
+			const loadFn = result.current.loadAbortable(async (disposer, value) => {
 				disposer.signal.addEventListener('abort', () => {
 					if (value === 'first') firstAborted = true
 					if (value === 'second') secondAborted = true
@@ -201,7 +201,7 @@ describe('useLoad', () => {
 		test('aborted async operations do not update state', async () => {
 			const {result} = renderHook(() => useLoad<number, [number]>())
 
-			const loadFn = result.current.load(async (disposer, value) => {
+			const loadFn = result.current.loadAbortable(async (disposer, value) => {
 				await new Promise(resolve => setTimeout(resolve, 20))
 				if (disposer.signal.aborted) return -1
 				return value
@@ -235,7 +235,7 @@ describe('useLoad', () => {
 			// Remount
 			const {result: newResult} = renderHook(() => useLoad<string, []>())
 
-			const loadFn = newResult.current.load((disposer) => {
+			const loadFn = newResult.current.loadAbortable((disposer) => {
 				if (disposer.signal.aborted) return 'aborted'
 				return 'not-aborted'
 			})
@@ -251,7 +251,7 @@ describe('useLoad', () => {
 			const disposeFn = vi.fn()
 			const {result} = renderHook(() => useLoad<string, [string]>())
 
-			const loadFn = result.current.load((disposer, value) => {
+			const loadFn = result.current.loadAbortable((disposer, value) => {
 				disposer.addDispose(disposeFn)
 				return value
 			})
@@ -277,7 +277,7 @@ describe('useLoad', () => {
 			const disposeFn3 = vi.fn()
 			const {result, unmount} = renderHook(() => useLoad<string, []>())
 
-			const loadFn = result.current.load((disposer) => {
+			const loadFn = result.current.loadAbortable((disposer) => {
 				disposer.addDispose(disposeFn1)
 				disposer.addDispose(disposeFn2)
 				disposer.addDispose(disposeFn3)
@@ -304,7 +304,7 @@ describe('useLoad', () => {
 
 			expect(result.current.loadingRef.current).toBeUndefined()
 
-			const loadFn = result.current.load(async () => {
+			const loadFn = result.current.loadAbortable(async () => {
 				await new Promise(resolve => setTimeout(resolve, 20))
 				return 'done'
 			})
@@ -334,7 +334,7 @@ describe('useLoad', () => {
 
 			const {result} = renderHook(() => useLoad<any, [string]>())
 
-			const loadFn = result.current.load(async (disposer, url) => {
+			const loadFn = result.current.loadAbortable(async (disposer, url) => {
 				const response = await fetch(url, { signal: disposer.signal })
 				return await response.json()
 			})
@@ -381,10 +381,10 @@ describe('useLoad', () => {
 
 			// Track how many times we create a new expensive operation
 			let expensiveOperationCount = 0
-			
+
 			// Create explicit resolver for controlling the promise
 			let resolvePromise: ((value: string) => void) | null = null
-			
+
 			// Mock function that represents an expensive operation
 			const doExpensiveOperation = vi.fn(() => {
 				expensiveOperationCount++
@@ -396,7 +396,7 @@ describe('useLoad', () => {
 			})
 
 			// Create a load function that checks loadingRef to avoid duplicate work
-			const loadFn = result.current.load(async (disposer) => {
+			const loadFn = result.current.loadAbortable(async (disposer) => {
 				// Check if there's already an ongoing operation
 				if (result.current.loadingRef.current) {
 					// Wait for and return the result of the existing promise
@@ -440,7 +440,7 @@ describe('useLoad', () => {
 			expect(doExpensiveOperation).toHaveBeenCalledTimes(1) // Still not called again
 			expect(expensiveOperationCount).toBe(1) // Still no new operation
 			expect(result.current.loadingRef.current).toBe(promise3)
-			
+
 			// Now explicitly resolve the expensive operation
 			resolvePromise!('result-1')
 
@@ -448,7 +448,7 @@ describe('useLoad', () => {
 			// because they all waited for the same expensive operation
 			const [value1, value2, value3] = await Promise.all([promise1!, promise2!, promise3!])
 			expect(value1).toBe('result-1')
-			expect(value2).toBe('result-1')  
+			expect(value2).toBe('result-1')
 			expect(value3).toBe('result-1')
 
 			await waitFor(() => {
@@ -483,7 +483,7 @@ describe('useLoad', () => {
 			let resolveSecond: ((value: string) => void) | undefined
 			let resolveThird: ((value: string) => void) | undefined
 
-			const loadFn = result.current.load(async (disposer, id) => {
+			const loadFn = result.current.loadAbortable(async (disposer, id) => {
 				return new Promise<string>((resolve) => {
 					if (id === 'first') resolveFirst = resolve
 					else if (id === 'second') resolveSecond = resolve
@@ -558,7 +558,7 @@ describe('useLoad', () => {
 			let operationCount = 0
 			let resolvePromise: ((value: string) => void) | undefined
 
-			const loadFn = result.current.load(async () => {
+			const loadFn = result.current.loadAbortable(async () => {
 				// Check if there's already an ongoing operation
 				// This is the key pattern - loadingRef.current is available here!
 				if (result.current.loadingRef.current) {
@@ -635,7 +635,7 @@ describe('useLoad', () => {
 			let computationStartCount = 0
 			let resolveComputation: ((value: number) => void) | undefined
 
-			const loadFn = result.current.load(async (_disposer, input: number) => {
+			const loadFn = result.current.loadAbortable(async (_disposer, input: number) => {
 				// If already computing, return the ongoing promise
 				// This pattern prevents running heavy computations multiple times
 				if (result.current.loadingRef.current) {
@@ -693,7 +693,7 @@ describe('useLoad', () => {
 			let resolveSecond: ((value: string) => void) | undefined
 			let resolveThird: ((value: string) => void) | undefined
 
-			const loadFn = result.current.load(async () => {
+			const loadFn = result.current.loadAbortable(async () => {
 				// Create a new promise for this call (not reusing loadingRef.current)
 				// This shows the default behavior without the optimization
 				return new Promise<string>(resolve => {
@@ -770,7 +770,7 @@ describe('useLoad', () => {
 			let resolvePromise: ((value: string) => void) | undefined
 
 			// Simple pattern: just return loadingRef.current if it exists
-			const loadFn = result.current.load(async () => {
+			const loadFn = result.current.loadAbortable(async () => {
 				// If already loading, just return the existing promise
 				if (result.current.loadingRef.current) {
 					return result.current.loadingRef.current
@@ -829,7 +829,7 @@ describe('useLoad', () => {
 			let resolveSecond: ((value: string) => void) | undefined
 			let rejectThird: ((error: Error) => void) | undefined
 
-			const loadFn = result.current.load(async (disposer, id) => {
+			const loadFn = result.current.loadAbortable(async (disposer, id) => {
 				return new Promise<string>((resolve, reject) => {
 					if (id === 'first') rejectFirst = reject
 					else if (id === 'second') resolveSecond = resolve
@@ -895,7 +895,7 @@ describe('useLoad', () => {
 		test('loadingRef.current cleared after sync function completes', () => {
 			const {result} = renderHook(() => useLoad<number, [number, number]>())
 
-			const loadFn = result.current.load((disposer, a, b) => {
+			const loadFn = result.current.loadAbortable((disposer, a, b) => {
 				// Check that loadingRef is undefined for sync functions
 				expect(result.current.loadingRef.current).toBeUndefined()
 				return a + b
@@ -911,4 +911,361 @@ describe('useLoad', () => {
 			expect(result.current.loading).toBe(false)
 			expect(result.current.loadingRef.current).toBeUndefined()
 		})
+	
+	describe('load function', () => {
+		test('synchronous load function', () => {
+			const {result} = renderHook(() => useLoad<number>())
+
+			const loadFn = result.current.load((a: number, b: number) => a + b)
+
+			expect(result.current.loading).toBe(false)
+
+			act(() => {
+				loadFn(2, 3)
+			})
+
+			expect(result.current.loading).toBe(false)
+			expect(result.current.data).toBe(5)
+			expect(result.current.error).toBeUndefined()
+		})
+
+		test('asynchronous load function success', async () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			const loadFn = result.current.load(async (value: string) => {
+				await new Promise(resolve => setTimeout(resolve, 10))
+				return `async-${value}`
+			})
+
+			act(() => {
+				loadFn('test')
+			})
+
+			// Should be loading immediately
+			expect(result.current.loading).toBe(true)
+
+			// Wait for async operation to complete
+			await waitFor(() => {
+				expect(result.current.loading).toBe(false)
+				expect(result.current.data).toBe('async-test')
+				expect(result.current.error).toBeUndefined()
+				expect(result.current.loadingRef.current).toBeUndefined()
+			})
+		})
+
+		test('asynchronous load function error', async () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			const error = new Error('Async error')
+			const loadFn = result.current.load(async () => {
+				await new Promise(resolve => setTimeout(resolve, 10))
+				throw error
+			})
+
+			let promise: Promise<string>
+			act(() => {
+				promise = loadFn()
+			})
+
+			// Should be loading immediately
+			expect(result.current.loading).toBe(true)
+
+			// Catch the rejection to prevent unhandled error
+			await expect(promise!).rejects.toThrow('Async error')
+
+
+			// Wait for async operation to fail
+			await waitFor(() => {
+				expect(result.current.loading).toBe(false)
+				expect(result.current.data).toBeUndefined()
+				expect(result.current.error).toBe(error)
+				expect(result.current.loadingRef.current).toBeUndefined()
+			})
+		})
+
+		test('synchronous load function error', () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			const error = new Error('Sync error')
+			const loadFn = result.current.load(() => {
+				throw error
+			})
+
+			// The error should be thrown
+			let thrownError: Error | undefined
+			act(() => {
+				try {
+					loadFn()
+				} catch (e) {
+					thrownError = e as Error
+				}
+			})
+
+			expect(thrownError).toBe(error)
+
+			// And the state should be updated with the error
+			expect(result.current.loading).toBe(false)
+			expect(result.current.data).toBeUndefined()
+			expect(result.current.error).toBe(error)
+		})
+
+		test('previous load is cancelled when new load starts', async () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			let secondCompleted = false
+
+			const loadFn = result.current.load(async (value: string) => {
+				await new Promise(resolve => setTimeout(resolve, 50))
+				if (value === 'second') secondCompleted = true
+				return value
+			})
+
+			// Start first load
+			act(() => {
+				loadFn('first')
+			})
+
+			expect(result.current.loading).toBe(true)
+
+			// Start second load before first completes
+			await new Promise(resolve => setTimeout(resolve, 10))
+			act(() => {
+				loadFn('second')
+			})
+
+			// Wait for second to complete
+			await new Promise(resolve => setTimeout(resolve, 60))
+
+			await waitFor(() => {
+				expect(result.current.data).toBe('second')
+				expect(result.current.loading).toBe(false)
+			})
+
+			// Second should have completed
+			expect(secondCompleted).toBe(true)
+		})
+
+		test('load with no parameters', async () => {
+			const {result} = renderHook(() => useLoad<number>())
+
+			let callCount = 0
+			const loadFn = result.current.load(async () => {
+				callCount++
+				await new Promise(resolve => setTimeout(resolve, 10))
+				return 42
+			})
+
+			act(() => {
+				loadFn()
+			})
+
+			expect(result.current.loading).toBe(true)
+
+			await waitFor(() => {
+				expect(result.current.data).toBe(42)
+				expect(result.current.loading).toBe(false)
+			})
+
+			expect(callCount).toBe(1)
+		})
+
+		test('load with multiple parameters', () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			const loadFn = result.current.load((a: string, b: number, c: boolean) => {
+				return `${a}-${b}-${c}`
+			})
+
+			act(() => {
+				loadFn('hello', 123, true)
+			})
+
+			expect(result.current.data).toBe('hello-123-true')
+			expect(result.current.loading).toBe(false)
+		})
+
+		test('multiple sequential calls', async () => {
+			const {result} = renderHook(() => useLoad<number>())
+
+			const loadFn = result.current.load(async (value: number) => {
+				await new Promise(resolve => setTimeout(resolve, 10))
+				return value * 2
+			})
+
+			// First call
+			act(() => {
+				loadFn(5)
+			})
+
+			await waitFor(() => {
+				expect(result.current.data).toBe(10)
+				expect(result.current.loading).toBe(false)
+			})
+
+			// Second call
+			act(() => {
+				loadFn(7)
+			})
+
+			await waitFor(() => {
+				expect(result.current.data).toBe(14)
+				expect(result.current.loading).toBe(false)
+			})
+
+			// Third call
+			act(() => {
+				loadFn(3)
+			})
+
+			await waitFor(() => {
+				expect(result.current.data).toBe(6)
+				expect(result.current.loading).toBe(false)
+			})
+		})
+
+		test('load does not provide disposer to callback', () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			// The callback should only receive the parameters, not a disposer
+			const callback = vi.fn((value: string) => value.toUpperCase())
+			const loadFn = result.current.load(callback)
+
+			act(() => {
+				loadFn('test')
+			})
+
+			// The callback should have been called with just the parameter
+			expect(callback).toHaveBeenCalledTimes(1)
+			expect(callback).toHaveBeenCalledWith('test')
+			expect(result.current.data).toBe('TEST')
+		})
+
+		test('error recovery with successful subsequent load', async () => {
+			const {result} = renderHook(() => useLoad<number>())
+
+			let shouldError = true
+			const loadFn = result.current.load(async (value: number) => {
+				await new Promise(resolve => setTimeout(resolve, 10))
+				if (shouldError) throw new Error('Expected error')
+				return value * 2
+			})
+
+			// First call throws error
+			let errorPromise: Promise<number>
+			act(() => {
+				errorPromise = loadFn(5)
+			})
+
+			// Catch the rejection to prevent unhandled error
+			await expect(errorPromise!).rejects.toThrow('Expected error')
+
+			await waitFor(() => {
+				expect(result.current.error).toBeDefined()
+				expect(result.current.data).toBeUndefined()
+				expect(result.current.loading).toBe(false)
+			})
+
+			// Second call succeeds
+			shouldError = false
+			act(() => {
+				loadFn(5)
+			})
+
+			await waitFor(() => {
+				expect(result.current.error).toBeUndefined()
+				expect(result.current.data).toBe(10)
+				expect(result.current.loading).toBe(false)
+			})
+		})
+
+		test('load handles promise rejection correctly', async () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			const loadFn = result.current.load(async (value: string) => {
+				await new Promise(resolve => setTimeout(resolve, 10))
+				return Promise.reject(new Error(`Rejected: ${value}`))
+			})
+
+			let promise: Promise<string>
+			act(() => {
+				promise = loadFn('test')
+			})
+
+			// Catch the rejection to prevent unhandled error
+			await expect(promise!).rejects.toThrow('Rejected: test')
+
+
+			await waitFor(() => {
+				expect(result.current.error).toBeInstanceOf(Error)
+				expect((result.current.error as Error).message).toBe('Rejected: test')
+				expect(result.current.loading).toBe(false)
+			})
+		})
+
+		test('cleanup on unmount prevents state updates', async () => {
+			const {result, unmount} = renderHook(() => useLoad<string>())
+
+			const loadFn = result.current.load(async (value: string) => {
+				await new Promise(resolve => setTimeout(resolve, 50))
+				return value
+			})
+
+			// Start async operation
+			act(() => {
+				loadFn('test')
+			})
+
+			expect(result.current.loading).toBe(true)
+
+			// Unmount before operation completes
+			unmount()
+
+			// Wait for the async operation to complete
+			await new Promise(resolve => setTimeout(resolve, 60))
+
+			// No way to check state after unmount, but this ensures no errors are thrown
+		})
+
+		test('loadingRef.current is updated correctly with load', async () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			expect(result.current.loadingRef.current).toBeUndefined()
+
+			const loadFn = result.current.load(async () => {
+				await new Promise(resolve => setTimeout(resolve, 20))
+				return 'done'
+			})
+
+			act(() => {
+				loadFn()
+			})
+
+			// loadingRef should be set
+			expect(result.current.loadingRef.current).toBeDefined()
+			expect(result.current.loading).toBe(true)
+
+			// Wait for completion
+			await waitFor(() => {
+				expect(result.current.loadingRef.current).toBeUndefined()
+				expect(result.current.loading).toBe(false)
+				expect(result.current.data).toBe('done')
+			})
+		})
+
+		test('load with complex object parameters', () => {
+			const {result} = renderHook(() => useLoad<string>())
+
+			type User = {name: string; age: number}
+			const loadFn = result.current.load((user: User, options: {uppercase: boolean}) => {
+				const name = options.uppercase ? user.name.toUpperCase() : user.name
+				return `${name} is ${user.age} years old`
+			})
+
+			act(() => {
+				loadFn({name: 'Alice', age: 30}, {uppercase: true})
+			})
+
+			expect(result.current.data).toBe('ALICE is 30 years old')
+		})
 	})
+})
