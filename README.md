@@ -103,6 +103,12 @@ disposer.dispose() // Subsequent calls are no-op
   - Calls immediately if already disposed
   - Functions called in reverse order on dispose
 
+`makeReset()`: Creates a resettable disposer pattern
+- Returns a reset function that when called:
+  - Disposes the current disposer
+  - Creates and returns a new disposer instance
+- Useful for managing resources that need periodic cleanup and recreation
+
 ## 3. Async Function Handling and Loading: `useLoad()`
 
 Powerful async data loading with error handling, loading states, and SSR support.

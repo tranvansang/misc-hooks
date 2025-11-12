@@ -12,10 +12,9 @@ import {
 } from 'react'
 import deepEqual from 'deep-equal'
 import {type Atom, makeAtom} from './atom.js'
-import {type Disposer, makeDisposer} from './disposer.js'
-
+import {type Disposer, makeDisposer, makeReset} from './disposer.js'
 export {type Atom, makeAtom}
-export {type Disposer, makeDisposer}
+export {type Disposer, makeDisposer, makeReset}
 
 type OptionalArraySub<T extends readonly unknown[],
 	R extends readonly unknown[]> = number extends R['length']

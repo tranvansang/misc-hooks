@@ -17,3 +17,10 @@ export function makeDisposer() {
 	}
 }
 
+export function makeReset() {
+	let disposer = makeDisposer()
+	return () => {
+		disposer.dispose()
+		return (disposer = makeDisposer())
+	}
+}
