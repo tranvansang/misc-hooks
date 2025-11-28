@@ -13,8 +13,11 @@ import {
 import deepEqual from 'deep-equal'
 import {type Atom, makeAtom} from './atom.js'
 import {type Disposer, makeDisposer, makeReset} from './disposer.js'
+import {type DialogOptions, showDialog, DialogProvider} from './dialog.js'
+
 export {type Atom, makeAtom}
 export {type Disposer, makeDisposer, makeReset}
+export {type DialogOptions, showDialog, DialogProvider}
 
 type OptionalArraySub<T extends readonly unknown[],
 	R extends readonly unknown[]> = number extends R['length']
