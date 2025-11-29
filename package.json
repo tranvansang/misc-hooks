@@ -1,8 +1,8 @@
 {
   "name": "misc-hooks",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "main": "index.js",
-  "sideEffects": false,
+	"sideEffects": false,
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -28,9 +28,7 @@
     "atom.js",
     "atom.d.ts",
     "disposer.js",
-    "disposer.d.ts",
-		"dialog.js",
-		"dialog.d.ts"
+    "disposer.d.ts"
   ],
   "repository": {
     "type": "git",
