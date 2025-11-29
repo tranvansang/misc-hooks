@@ -11,8 +11,7 @@ import {
 	useSyncExternalStore
 } from 'react'
 import deepEqual from 'deep-equal'
-import {type Atom, makeAtom} from './atom.js'
-export {type Atom, makeAtom}
+import {type Disposer, makeDisposer} from 'jdisposer'
 
 type OptionalArraySub<T extends readonly unknown[],
 	R extends readonly unknown[]> = number extends R['length']
@@ -202,12 +201,6 @@ export function useKeep<T>(value: T): T {
 	return ref.current
 }
 
-export function useAtom<T>(atom: Atom<T>) {
-	// useSyncExternalStore requires getServerSnapshot to return the same value
-	const [value] = useState(atom.value)
-	return useSyncExternalStore(atom.sub, () => atom.value, () => value)
-}
-
 type LoadState<T> = {
 	data: T
 	error?: undefined
@@ -228,7 +221,7 @@ export function useLoad<T, Params extends any[] = []>(
 	loadingRef: RefObject<Promise<T> | undefined>
 	loadAbortable<T2, Params2 extends any[]>(cb: (disposer: {
 		signal: Disposer['signal']
-		addDispose: Disposer['addDispose']
+		add: Disposer['add']
 	}, ...params: Params2) => T2): (...params: Params2) => T2
 	load<Callback extends (...params: any[]) => any>(cb: Callback): Callback
 } {
@@ -250,15 +243,15 @@ export function useLoad<T, Params extends any[] = []>(
 
 	const loadAbortable: any = useCallback((fn: (disposer: {
 		signal: Disposer['signal']
-		addDispose: Disposer['addDispose']
+		add: Disposer['add']
 	}, ...params: Params) => T | Promise<T>) => (...params: Params) => {
-		if (disposerRef.current.signal.aborted) return fn({signal: disposerRef.current.signal, addDispose: disposerRef.current.addDispose}, ...params)
+		if (disposerRef.current.signal.aborted) return fn({signal: disposerRef.current.signal, add: disposerRef.current.add}, ...params)
 
 		disposerRef.current.dispose()
 		const disposer = disposerRef.current = makeDisposer()
 		setState({loading: true})
 		try {
-			const result = fn({signal: disposer.signal, addDispose: disposer.addDispose}, ...params)
+			const result = fn({signal: disposer.signal, add: disposer.add}, ...params)
 			if (typeof (result as any)?.then === 'function') return loadingRef.current = (async () => {
 				try {
 					const data = await result

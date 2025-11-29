@@ -2,17 +2,7 @@
   "name": "misc-hooks",
   "version": "0.7.0",
   "main": "index.js",
-	"sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "import": "./index.js"
-    },
-    "./atom": {
-      "types": "./atom.d.ts",
-      "import": "./atom.js"
-    }
-  },
+  "sideEffects": false,
   "scripts": {
     "prepublishOnly": "npx tsc",
     "test": "vitest run test/",
@@ -20,9 +10,7 @@
   },
   "files": [
     "index.js",
-    "index.d.ts",
-    "atom.js",
-    "atom.d.ts"
+    "index.d.ts"
   ],
   "repository": {
     "type": "git",
@@ -43,6 +31,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "deep-equal": "^2.2.3"
+    "deep-equal": "^2.2.3",
+    "jdisposer": "^0.0.1"
   }
 }

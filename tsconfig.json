@@ -3,8 +3,6 @@
 		"strict": true,
 		"target": "ESNext",
 		"module": "ESNext",
-		"baseUrl": ".",
-		"outDir": ".",
 		"declaration": true,
 		"inlineSourceMap": true,
 		"downlevelIteration": true,
@@ -12,6 +10,6 @@
 		"moduleResolution": "Node",
 		"esModuleInterop": true
 	},
-	"include": ["index.ts", "atom.ts"],
+	"include": ["index.ts"],
 	"exclude": ["node_modules"]
 }

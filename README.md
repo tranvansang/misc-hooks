@@ -7,10 +7,7 @@ A collection of essential React hooks for state management, async operations, an
 
 ## Features
 
-- 🎯 **Simple & Powerful**: Atomic state management without providers
 - 🔄 **Async Made Easy**: Advanced data loading with automatic cleanup
-- 🧹 **Resource Management**: Built-in disposal and cleanup patterns
-- ⚡ **Zero Config**: No providers or wrappers needed
 - 🌐 **SSR Ready**: Server-side rendering support
 
 ## Installation
@@ -19,60 +16,7 @@ A collection of essential React hooks for state management, async operations, an
 npm i misc-hooks
 ```
 
-## 1. State Management: `makeAtom()` and `useAtom()`
-
-Simple reactive state management without providers.
-
-### Sample Usage
-
-```typescript
-// create atom
-const atom = makeAtom<T>()
-const atomWithInitial = makeAtom<T>(initialValue) // with initial value
-
-// use atom in React component
-const value = useAtom(atom)
-
-// getter and setter
-atom.value = newValue // set value synchronously
-const currentValue = atom.value // get value synchronously
-
-// subscribe for changes
-const unsub = atom.sub((newVal, oldVal) => console.log(newVal, oldVal))
-const unsub2 = atom.sub(() => console.log(atom.value))
-
-// subscribe with cleanup
-const unsub3 = atom.sub((newVal) => {
-  const handler = () => console.log('cleanup')
-  window.addEventListener('resize', handler)
-  return () => window.removeEventListener('resize', handler)
-})
-
-// subscribe and run immediately
-const unsub4 = atom.sub((newVal, oldVal) => console.log(newVal, oldVal), {now: true})
-
-// subscribe with conditional updates
-const unsub5 = atom.sub(
-  (newVal, oldVal) => console.log(newVal),
-  {skip(newVal, oldVal) {return newVal === oldVal}} // skip if values are the same
-)
-
-unsub() // unsubscribe
-```
-
-### API
-
-- `makeAtom<T>(initialValue?: T)`: Creates an atom with optional initial value
-- `useAtom(atom: Atom<T>): T`: React hook to subscribe to atom changes
-- `atom.value`: Get or set the value synchronously
-- `atom.sub(subscriber, options?)`: Subscribe to value changes
-  - Returns unsubscribe function
-  - Subscriber receives `(newValue, oldValue)` and can return cleanup function
-  - Options:
-    - `now: boolean` - Call subscriber immediately with current value
-    - `skip: (newVal, oldVal) => boolean` - Skip subscriber if returns true
-
-## 3. Async Function Handling and Loading: `useLoad()`
+## 1. Async Function Handling and Loading: `useLoad()`
 
 Powerful async data loading with error handling, loading states, and SSR support.
 
@@ -126,7 +70,7 @@ Besides the `PartialDisposer` object, `fn` also receives the parameters passed t
 
 `PartialDisposer` object has the following properties:
 - `signal`: an `AbortSignal` object that is aborted when the component is unmounted or another `loadAbortable()()` is called.
-- `addDispose(fn?: void | (() => void))`: add a function to be called when the component is unmounted or the next `loadAbortable()()` is called.
+- `add(fn?: void | (() => void))`: add a function to be called when the component is unmounted or the next `loadAbortable()()` is called.
 If the component is unmounted or the next `loadAbortable()()` is called before, `fn` is immediately and synchronously called.
 
 #### `loadingRef` value
@@ -182,17 +126,17 @@ Sample usage:
 const {loadAbortable} = useLoad()
 useEffect(() => {
 	void loadAbortable(
-		async ({signal, addDispose}) => {
+		async ({signal, add}) => {
 			const loader = makeLoader()
 
 			signal.addEventListener('abort', () => loader.abort())
 			const value = await loader.loadData(params)
-			addDispose(() => loader.dispose())
+			add(() => loader.dispose())
 
 			if (signal.aborted) return
 
 			window.addEventListener('resize', value.update)
-			addDispose(() => window.removeEventListener('resize', value.update))
+			add(() => window.removeEventListener('resize', value.update))
 		})()
 }, [loadAbortable, params])
 ```
@@ -292,7 +236,7 @@ useEffectWithPrevDeps(
 )
 ```
 
-## 4. Utility Hooks
+## 2. Utility Hooks
 
 ### Frequently Used
 - `useEffectWithPrevDeps((prevDeps) => {}, [...deps])` - Similar to `useEffect`, but provides previous deps to the effect function
@@ -317,10 +261,6 @@ useEffectWithPrevDeps(
 - `prevRef = usePrevRef(value)` - Get a ref whose value is the previous `value`
 - `useLayoutEffectWithPrevDeps((prevDeps) => {}, [...deps])` - `useLayoutEffect` version of `useEffectWithPrevDeps`
 - Type `OptionalArray` - Array with optional elements
-
-## Requirements
-
-- React 18.0 or higher (for `useSyncExternalStore` API usage)
 
 ## Contributing
 

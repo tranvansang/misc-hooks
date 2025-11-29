@@ -139,7 +139,7 @@ describe('useLoad', () => {
 			const {result, unmount} = renderHook(() => useLoad<string, []>())
 
 			const loadFn = result.current.loadAbortable((disposer) => {
-				disposer.addDispose(disposeFn)
+				disposer.add(disposeFn)
 				return 'test'
 			})
 
@@ -247,12 +247,12 @@ describe('useLoad', () => {
 			})
 		})
 
-		test('addDispose function is called on next load', () => {
+		test('add() function is called on next load', () => {
 			const disposeFn = vi.fn()
 			const {result} = renderHook(() => useLoad<string, [string]>())
 
 			const loadFn = result.current.loadAbortable((disposer, value) => {
-				disposer.addDispose(disposeFn)
+				disposer.add(disposeFn)
 				return value
 			})
 
@@ -271,16 +271,16 @@ describe('useLoad', () => {
 			expect(disposeFn).toHaveBeenCalledTimes(1)
 		})
 
-		test('multiple addDispose functions are all called', () => {
+		test('multiple add() functions are all called', () => {
 			const disposeFn1 = vi.fn()
 			const disposeFn2 = vi.fn()
 			const disposeFn3 = vi.fn()
 			const {result, unmount} = renderHook(() => useLoad<string, []>())
 
 			const loadFn = result.current.loadAbortable((disposer) => {
-				disposer.addDispose(disposeFn1)
-				disposer.addDispose(disposeFn2)
-				disposer.addDispose(disposeFn3)
+				disposer.add(disposeFn1)
+				disposer.add(disposeFn2)
+				disposer.add(disposeFn3)
 				return 'test'
 			})
 
@@ -911,7 +911,7 @@ describe('useLoad', () => {
 			expect(result.current.loading).toBe(false)
 			expect(result.current.loadingRef.current).toBeUndefined()
 		})
-	
+
 	describe('load function', () => {
 		test('synchronous load function', () => {
 			const {result} = renderHook(() => useLoad<number>())
