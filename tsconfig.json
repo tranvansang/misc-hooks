@@ -12,6 +12,6 @@
 		"moduleResolution": "Node",
 		"esModuleInterop": true
 	},
-	"include": ["index.ts", "atom.ts", "disposer.ts"],
+	"include": ["index.ts", "atom.ts"],
 	"exclude": ["node_modules"]
 }

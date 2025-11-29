@@ -72,43 +72,6 @@ unsub() // unsubscribe
     - `now: boolean` - Call subscriber immediately with current value
     - `skip: (newVal, oldVal) => boolean` - Skip subscriber if returns true
 
-## 2. Resource Management: `makeDisposer()`
-
-Manage cleanup of resources with AbortSignal integration.
-
-### Sample Usage
-
-```typescript
-const disposer = makeDisposer()
-
-// Use with fetch API
-fetch('/api/data', { signal: disposer.signal })
-
-// Add cleanup functions
-disposer.addDispose(() => console.log('Cleanup 1'))
-disposer.addDispose(() => console.log('Cleanup 2'))
-
-// Clean up everything (aborts signal and calls cleanup functions)
-disposer.dispose() // Subsequent calls are no-op
-```
-
-### API
-
-`makeDisposer()`: Creates a new Disposer instance
-`Disposer` object has the following properties:
-- `dispose()`: Abort signal and call all cleanup functions (no-op if already disposed)
-- `signal`: AbortSignal that's aborted when disposed
-- `addDispose(fn?)`: Add cleanup function
-  - Ignores falsy values
-  - Calls immediately if already disposed
-  - Functions called in reverse order on dispose
-
-`makeReset()`: Creates a resettable disposer pattern
-- Returns a reset function that when called:
-  - Disposes the current disposer
-  - Creates and returns a new disposer instance
-- Useful for managing resources that need periodic cleanup and recreation
-
 ## 3. Async Function Handling and Loading: `useLoad()`
 
 Powerful async data loading with error handling, loading states, and SSR support.
@@ -164,7 +127,7 @@ Besides the `PartialDisposer` object, `fn` also receives the parameters passed t
 `PartialDisposer` object has the following properties:
 - `signal`: an `AbortSignal` object that is aborted when the component is unmounted or another `loadAbortable()()` is called.
 - `addDispose(fn?: void | (() => void))`: add a function to be called when the component is unmounted or the next `loadAbortable()()` is called.
-Similar to `makeDisposer()` API, if the component is unmounted or the next `loadAbortable()()` is called before, `fn` is immediately and synchronously called.
+If the component is unmounted or the next `loadAbortable()()` is called before, `fn` is immediately and synchronously called.
 
 #### `loadingRef` value
 
@@ -354,7 +317,6 @@ useEffectWithPrevDeps(
 - `prevRef = usePrevRef(value)` - Get a ref whose value is the previous `value`
 - `useLayoutEffectWithPrevDeps((prevDeps) => {}, [...deps])` - `useLayoutEffect` version of `useEffectWithPrevDeps`
 - Type `OptionalArray` - Array with optional elements
-- Type `Disposer` - Utility type for cleanup management
 
 ## Requirements
 

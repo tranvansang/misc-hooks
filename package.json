@@ -1,6 +1,6 @@
 {
   "name": "misc-hooks",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "main": "index.js",
 	"sideEffects": false,
   "exports": {
@@ -11,10 +11,6 @@
     "./atom": {
       "types": "./atom.d.ts",
       "import": "./atom.js"
-    },
-    "./disposer": {
-      "types": "./disposer.d.ts",
-      "import": "./disposer.js"
     }
   },
   "scripts": {
@@ -26,9 +22,7 @@
     "index.js",
     "index.d.ts",
     "atom.js",
-    "atom.d.ts",
-    "disposer.js",
-    "disposer.d.ts"
+    "atom.d.ts"
   ],
   "repository": {
     "type": "git",
